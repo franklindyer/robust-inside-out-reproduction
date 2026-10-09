@@ -1,0 +1,364 @@
+### Spouse questions
+SELECT ?person ?personLabel ?spouse ?spouseLabel
+WHERE
+{
+  ?person wdt:P26 ?spouse.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?person wdt:P31 wd:Q5 .
+    bd:serviceParam bd:sample.limit 100000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 894 .
+  }
+}
+LIMIT 5000
+
+### Manufacturer
+SELECT ?model ?modelLabel ?manufacturer ?manufacturerLabel
+WHERE
+{
+  ?model wdt:P176 ?manufacturer.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?model wdt:P31 wd:Q10929058 .
+    bd:serviceParam bd:sample.limit 10000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 893 .
+  }
+}
+LIMIT 5000
+
+### Record label
+SELECT ?album ?albumLabel ?label ?labelLabel
+WHERE
+{
+  ?album wdt:P264 ?label.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?album wdt:P31 wd:Q482994.
+    bd:serviceParam bd:sample.limit 10000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 892 .
+  }
+}
+LIMIT 5000
+
+### Author
+SELECT ?work ?workLabel ?author ?authorLabel
+WHERE
+{
+  ?author wdt:P31 wd:Q5.
+  ?work wdt:P50 ?author.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?work wdt:P31 wd:Q7725634.
+    bd:serviceParam bd:sample.limit 10000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 891 .
+  }
+}
+LIMIT 5000
+
+### Director of photography of film
+SELECT ?film ?filmLabel ?dirphoto ?dirphotoLabel
+WHERE
+{
+  ?dirphoto wdt:P31 wd:Q5.
+  ?film wdt:P344 ?dirphoto.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?film wdt:P31 wd:Q11424.
+    bd:serviceParam bd:sample.limit 10000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 890 .
+  }
+}
+LIMIT 5000
+
+### Film editor of film
+SELECT ?film ?filmLabel ?editor ?editorLabel
+WHERE
+{
+  ?editor wdt:P31 wd:Q5.
+  ?film wdt:P1040 ?editor.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?film wdt:P31 wd:Q11424.
+    bd:serviceParam bd:sample.limit 10000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 889 .
+  }
+}
+LIMIT 5000
+
+### Production designer of film
+SELECT ?film ?filmLabel ?proddes ?proddesLabel
+WHERE
+{
+  ?proddes wdt:P31 wd:Q5.
+  ?film wdt:P2554 ?proddes.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?film wdt:P31 wd:Q11424.
+    bd:serviceParam bd:sample.limit 100000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 888 .
+  }
+}
+LIMIT 5000
+
+### Costume designer of film
+SELECT ?film ?filmLabel ?costdes ?costdesLabel
+WHERE
+{
+  ?costdes wdt:P31 wd:Q5.
+  ?film wdt:P2515 ?costdes.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?film wdt:P31 wd:Q11424.
+    bd:serviceParam bd:sample.limit 100000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 887 .
+  }
+}
+LIMIT 5000
+
+### Producer of film
+SELECT ?film ?filmLabel ?producer ?producerLabel
+WHERE
+{
+  ?producer wdt:P31 wd:Q5.
+  ?film wdt:P162 ?producer.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?film wdt:P31 wd:Q11424.
+    bd:serviceParam bd:sample.limit 100000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 886 .
+  }
+}
+LIMIT 5000
+
+### Founder of "business"
+SELECT ?org ?orgLabel ?orgtype ?orgtypeLabel ?founder ?founderLabel
+WHERE
+{
+  # VALUES ?orgtype {wd:Q6881511 wd:Q189004 wd:Q33506 wd:Q4830453}
+  ?founder wdt:P31 wd:Q5.
+  # ?org wdt:P31 ?orgtype.
+  ?org wdt:P112 ?founder.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?org wdt:P31 wd:Q6881511 .
+    bd:serviceParam bd:sample.limit 100000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 882 .
+  }
+}
+LIMIT 5000
+
+### Founder of "college"
+SELECT ?org ?orgLabel ?orgtype ?orgtypeLabel ?founder ?founderLabel
+WHERE
+{
+  # VALUES ?orgtype {wd:Q6881511 wd:Q189004 wd:Q33506 wd:Q4830453}
+  ?founder wdt:P31 wd:Q5.
+  # ?org wdt:P31 ?orgtype.
+  ?org wdt:P112 ?founder.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?org wdt:P31 wd:Q189004 .
+    bd:serviceParam bd:sample.limit 100000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 883 .
+  }
+}
+LIMIT 5000
+
+### Founder of "museum"
+SELECT ?org ?orgLabel ?orgtype ?orgtypeLabel ?founder ?founderLabel
+WHERE
+{
+  # VALUES ?orgtype {wd:Q6881511 wd:Q189004 wd:Q33506 wd:Q4830453}
+  ?founder wdt:P31 wd:Q5.
+  # ?org wdt:P31 ?orgtype.
+  ?org wdt:P112 ?founder.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?org wdt:P31 wd:Q33506 .
+    bd:serviceParam bd:sample.limit 100000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 884 .
+  }
+}
+LIMIT 5000
+
+### Founder of "enterprise"
+SELECT ?org ?orgLabel ?orgtype ?orgtypeLabel ?founder ?founderLabel
+WHERE
+{
+  # VALUES ?orgtype {wd:Q6881511 wd:Q189004 wd:Q33506 wd:Q4830453}
+  ?founder wdt:P31 wd:Q5.
+  # ?org wdt:P31 ?orgtype.
+  ?org wdt:P112 ?founder.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?org wdt:P31 wd:Q4830453 .
+    bd:serviceParam bd:sample.limit 100000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 885 .
+  }
+}
+LIMIT 5000
+
+### City of formation of a "business"
+SELECT ?business ?businessLabel ?orgtype ?orgtypeLabel ?cityform ?cityformLabel
+WHERE
+{
+  ?cityform wdt:P31 wd:Q515.
+  ?business wdt:P740 ?cityform.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?business wdt:P31 wd:Q6881511.
+    bd:serviceParam bd:sample.limit 100000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 880 .
+  }
+}
+LIMIT 5000
+
+### City of formation of an "enterprise"
+SELECT ?business ?businessLabel ?orgtype ?orgtypeLabel ?cityform ?cityformLabel
+WHERE
+{
+  ?cityform wdt:P31 wd:Q515.
+  ?business wdt:P740 ?cityform.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?business wdt:P31 wd:Q4830453.
+    bd:serviceParam bd:sample.limit 100000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 881 .
+  }
+}
+LIMIT 5000
+
+### Headquarters location of "business"
+SELECT ?business ?businessLabel ?orgtype ?orgtypeLabel ?hqcity ?hqcityLabel
+WHERE
+{
+  ?hqcity wdt:P31 wd:Q515.
+  ?business wdt:P159 ?hqcity.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?business wdt:P31 wd:Q6881511.
+    bd:serviceParam bd:sample.limit 100000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 878 .
+  }
+}
+LIMIT 5000
+
+### Headquarters location of "enterprise"
+SELECT ?business ?businessLabel ?orgtype ?orgtypeLabel ?hqcity ?hqcityLabel
+WHERE
+{
+  ?hqcity wdt:P31 wd:Q515.
+  ?business wdt:P159 ?hqcity.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?business wdt:P31 wd:Q4830453.
+    bd:serviceParam bd:sample.limit 100000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 879 .
+  }
+}
+LIMIT 5000
+
+### City of birth?
+SELECT ?person ?personLabel ?birthcity ?birthcityLabel
+WHERE
+{
+  ?birthcity wdt:P31 wd:Q515.
+  ?person wdt:P19 ?birthcity.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?person wdt:P31 wd:Q5.
+    bd:serviceParam bd:sample.limit 100000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 877 .
+  }
+}
+LIMIT 5000
+
+### City of death (randomly sampled)
+SELECT ?person ?personLabel ?deathcity ?deathcityLabel
+WHERE
+{
+  ?deathcity wdt:P31 wd:Q515.
+  ?person wdt:P20 ?deathcity.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?person wdt:P31 wd:Q5.
+    bd:serviceParam bd:sample.limit 100000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 876 .
+  }
+}
+LIMIT 5000
+
+### Owner of a brand
+SELECT ?brand ?brandLabel ?owner ?ownerLabel
+WHERE
+{
+  ?owner wdt:P31 wd:Q4830453 .
+  ?brand wdt:P127 ?owner.
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en,[AUTO_LANGUAGE],mul".
+  }
+  SERVICE bd:sample {
+    ?brand wdt:P31 wd:Q431289 .
+    bd:serviceParam bd:sample.limit 50000 .
+    bd:serviceParam bd:sample.sampleType "RANDOM" .
+    bd:serviceParam bd:sample.seed 895 .
+  }
+}
+LIMIT 5000

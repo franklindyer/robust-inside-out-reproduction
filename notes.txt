@@ -1,0 +1,56 @@
+Possible candidate Wikidata relations to use?
+- relations from original paper
+    - P26 (spouse)
+    - P176 (manufacturer)
+    - P264 (record label)
+    - P50 (author)
+- some others chosen by me?
+    - attributes of films
+        - P57 (director, of film)
+        - P344 (director of photography, of film)
+        - P2515 (costume designer, of film)
+        - P162 (producer, of film)
+    - attributes of companies/corporations
+        - P112 (founder)
+            - could also exist for universities, museums, etc.
+        - P159 (headquarters location?)
+    - peoples attributes
+        - P184 (doctoral advisor, well-defined? point in time?)
+        - P19 (place of birth, should be restricted to a city)
+        - P20 (place of death, should be restricted to a city)
+        - P1196 (manner of death)
+        - P509 (cause of death)
+    - attributes of passenger flights e.g. Q17374096
+        - P1427 (start point, maybe easy to guess)
+        - P1444 (destination point, also maybe too easy to guess) 
+    - attributes of brands
+        - Q16323605 "food brand"
+        - P127 (owned by)
+
+Final list:
+- 200/200 SPOUSE
+- 200/200 MANUFACTURER
+- 200/200 RECORD LABEL
+- 200/200 AUTHOR
+- 200/200 FILM DIRECTOR OF PHOTOGRAPHY
+- 200/200 FILM EDITOR
+- 200/200 FILM PRODUCTION DESIGNER
+- 200/200 FILM COSTUME DESIGNER
+- 200/200 FILM PRODUCER
+- (HELD-OUT) FOUNDER OF BUSINESS, COLLEGE, MUSEUM, ENTERPRISE
+    - 200/200 BUSINESS
+    - 50/50 COLLEGE
+    - 200/200 MUSEUM
+    - 200/200 ENTERPRISE
+- CITY OF FORMATION OF BUSINESS, ENTERPRISE
+    - 200/200 BUSINESS
+    - 200/200 ENTERPRISE
+- HEADQUARTERS CITY OF BUSINESS, ENTERPRISE
+    - 200/200 BUSINESS
+    - 200/200 ENTERPRISE
+- 200/200 (HELD-OUT) CITY OF BIRTH
+- 200/200 (HELD-OUT) CITY OF DEATH
+- 200/200 COMPANY OWNING A BRAND
+
+Division of train/test data?
+

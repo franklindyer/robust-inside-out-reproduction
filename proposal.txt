@@ -1,0 +1,12 @@
+Team members: Franklin Pezzuti Dyer
+9 ECTS graded
+
+For my course project, I'd like to attempt a reproduction of the paper "Inside-Out: Hidden Factual Knowledge in LLMs" (Gekhman et al). None of the paper's code or raw output data is available for inspection, so an open-source reproduction of the authors' experiments would arguably constitute a significant contribution to this line of inquiry.
+
+However, I would also like to make a few significant modifications to the authors' methodology in my own approach:
+
+1. Rather than using questions from the EntityQuestions dataset, I'll obtain data directly from WikiData using their SPARQL query interface. I'll also use a wider variety of relations than just the 4 WikiData relations in the original Inside-Out paper, since I consider the authors' restriction to these 4 relations somewhat artificial and harmful to the paper's robustness. However, I will stick to their general guidelines of picking relations that are generally "hard to guess" but "easy to grade".
+
+2. I plan on carrying out an additional experiment in which I test the internal probes not only on held-out questions from the relations used to train them, but also on a collection questions from held-out WikiData relations. This will hopefully shed some light on whether the probes are learning a pattern that is specific to the particular question or relation types on which they are trained, or whether they are accessing a more generalizable "truthiness" property of hidden representations.
+
+3. I'm not yet sure whether I will have time/resources to repeat the authors' results with a larger 32B model, but if so, I will make sure to also use a smaller model from the same family in order to compare the results, possibly shedding light on questions about the extent to which model size, all other things being equal, impacts the "knowledge gap". For instance, if I use Qwen3-32B as my larger model (as the authors do), then I will also find a Qwen model with a comparable size of 7B-9B to the other smaller models for the sake of comparison.
