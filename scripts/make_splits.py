@@ -1,7 +1,11 @@
 from collections import Counter, defaultdict
 import csv
 import json
+import random
 import re
+
+SEED = 420
+random.seed(SEED)
 
 SOURCES = json.loads(open("data/split.json").read())["sources"]
 
@@ -25,6 +29,8 @@ def load_wikidata(fdata):
     for k in data:
         if len(data[k]) == 1: # We only want questions with unique answers
             data_list.append(data[k][0])
+
+    random.shuffle(data_list)
 
     train_rows = []
     test_rows = []
@@ -50,17 +56,16 @@ GLOBAL_ID = 0
 
 for source_data in SOURCES:
     train_rows, test_rows = load_wikidata(source_data)
-    
-    with open(f"data/splits/train/{source_data['filename']}", 'w') as f:
-        for r in train_rows:
-            question = source_data["tpl"].format(r[source_data["source_col"] + "Label"])
-            answer = r[source_data["target_col"] + "Label"]
-            f.write(f"{GLOBAL_ID}\t{question}\t{answer}\n")
-            GLOBAL_ID += 1   
- 
-    with open(f"data/splits/test/{source_data['filename']}", 'w') as f:
-        for r in test_rows:
-            question = source_data["tpl"].format(r[source_data["source_col"] + "Label"])
-            answer = r[source_data["target_col"] + "Label"]
-            f.write(f"{GLOBAL_ID}\t{question}\t{answer}\n")
-            GLOBAL_ID += 1
+
+    n_test = len(test_rows)
+    n_dev = n_test // 10
+    dev_rows = test_rows[:n_dev]
+    test_rows = test_rows[n_dev:] 
+   
+    for dirname, data_rows in [("train", train_rows), ("test", test_rows), ("dev", dev_rows)]: 
+        with open(f"data/splits/{dirname}/{source_data['filename']}", 'w') as f:
+            for r in data_rows:
+                question = source_data["tpl"].format(r[source_data["source_col"] + "Label"])
+                answer = r[source_data["target_col"] + "Label"]
+                f.write(f"{GLOBAL_ID}\t{question}\t{answer}\n")
+                GLOBAL_ID += 1   

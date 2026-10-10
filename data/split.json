@@ -44,6 +44,141 @@
             "train": 200,
             "test": 200,
             "tpl": "Who was the director of photography for the film {}?"
+        },
+        {
+            "name": "FILM EDITOR",
+            "filename": "film_editor.tsv",
+            "source_col": "film",
+            "target_col": "editor",
+            "train": 200,
+            "test": 200,
+            "tpl": "Who was the film editor for the film {}?"
+        },
+        {
+            "name": "FILM PRODUCTION DESIGNER",
+            "filename": "production_designer.tsv",
+            "source_col": "film",
+            "target_col": "proddes",
+            "train": 200,
+            "test": 200,
+            "tpl": "Who was the production designer for the film {}?"
+        },
+        {
+            "name": "FILM COSTUME DESIGNER",
+            "filename": "costume_designer.tsv",
+            "source_col": "film",
+            "target_col": "costdes",
+            "train": 200,
+            "test": 200,
+            "tpl": "Who was the costume designer for the film {}?"
+        },
+        {
+            "name": "FILM PRODUCER",
+            "filename": "producer.tsv",
+            "source_col": "film",
+            "target_col": "producer",
+            "train": 200,
+            "test": 200,
+            "tpl": "Who was the producer for the film {}?"
+        },
+        {
+            "name": "BUSINESS FOUNDER",
+            "filename": "business_founder.tsv",
+            "source_col": "org",
+            "target_col": "founder",
+            "train": 200,
+            "test": 200,
+            "tpl": "Who founded the business {}?"
+        },
+        {
+            "name": "COLLEGE FOUNDER",
+            "filename": "college_founder.tsv",
+            "source_col": "org",
+            "target_col": "founder",
+            "train": 50,
+            "test": 50,
+            "tpl": "Who founded the college {}?"
+        },
+        {
+            "name": "MUSEUM FOUNDER",
+            "filename": "museum_founder.tsv",
+            "source_col": "org",
+            "target_col": "founder",
+            "train": 200,
+            "test": 200,
+            "tpl": "Who founded the museum {}?"
+        },
+        {
+            "name": "ENTERPRISE FOUNDER",
+            "filename": "enterprise_founder.tsv",
+            "source_col": "org",
+            "target_col": "founder",
+            "train": 200,
+            "test": 200,
+            "tpl": "Who founded the enterprise {}?"
+        },
+        {
+            "name": "BUSINESS CITY OF FORMATION",
+            "filename": "business_foundcity.tsv",
+            "source_col": "business",
+            "target_col": "cityform",
+            "train": 200,
+            "test": 200,
+            "tpl": "In which city was the business {} formed?"
+        },
+        {
+            "name": "ENTERPRISE CITY OF FORMATION",
+            "filename": "enterprise_foundcity.tsv",
+            "source_col": "business",
+            "target_col": "cityform",
+            "train": 200,
+            "test": 200,
+            "tpl": "In which city was the enterprise {} formed?"
+        },
+        {
+            "name": "BUSINESS HEADQUARTERS CITY",
+            "filename": "business_hq.tsv",
+            "source_col": "business",
+            "target_col": "hqcity",
+            "train": 200,
+            "test": 200,
+            "tpl": "In which city is the business {} headquartered?"
+        },
+        {
+            "name": "ENTERPRISE HEADQUARTERS CITY",
+            "filename": "enterprise_hq.tsv",
+            "source_col": "business",
+            "target_col": "hqcity",
+            "train": 200,
+            "test": 200,
+            "tpl": "In which city is the enterprise {} headquartered?"
+        },
+        {
+            "name": "BIRTH CITY",
+            "filename": "birthcity.tsv",
+            "source_col": "person",
+            "target_col": "birthcity",
+            "train": 200,
+            "test": 200,
+            "tpl": "In which city was the person {} born?"
+        },
+        {
+            "name": "DEATH CITY",
+            "filename": "deathcity.tsv",
+            "source_col": "person",
+            "target_col": "deathcity",
+            "train": 200,
+            "test": 200,
+            "tpl": "In which city did the person {} die?"
+        },
+        {
+            "name": "COMPANY OWNING BRAND",
+            "filename": "brand_owner.tsv",
+            "source_col": "brand",
+            "target_col": "owner",
+            "train": 200,
+            "test": 200,
+            "tpl": "Which company owns the brand {}?"
         }
     ]
 }
