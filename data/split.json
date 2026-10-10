@@ -122,8 +122,8 @@
             "filename": "business_foundcity.tsv",
             "source_col": "business",
             "target_col": "cityform",
-            "train": 200,
-            "test": 200,
+            "train": 150,
+            "test": 150,
             "tpl": "In which city was the business {} formed?"
         },
         {
@@ -131,8 +131,8 @@
             "filename": "enterprise_foundcity.tsv",
             "source_col": "business",
             "target_col": "cityform",
-            "train": 200,
-            "test": 200,
+            "train": 150,
+            "test": 150,
             "tpl": "In which city was the enterprise {} formed?"
         },
         {

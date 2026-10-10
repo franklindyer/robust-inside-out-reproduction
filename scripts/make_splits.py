@@ -41,9 +41,13 @@ def load_wikidata(fdata):
         if len(train_rows) < fdata["train"]:
             if not (source_entity in TEST_ENTITIES or target_entity in TEST_ENTITIES):
                 train_rows.append(r)
+                TRAIN_ENTITIES.add(source_entity)
+                TRAIN_ENTITIES.add(target_entity)
         elif len(test_rows) < fdata["test"]:
             if not (source_entity in TRAIN_ENTITIES or target_entity in TRAIN_ENTITIES):
                 test_rows.append(r)
+                TEST_ENTITIES.add(source_entity)
+                TEST_ENTITIES.add(target_entity)
         else:
             break
 
