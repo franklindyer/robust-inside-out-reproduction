@@ -1,0 +1,49 @@
+{
+    "sources": [
+        {
+            "name": "SPOUSE",
+            "filename": "spouse.tsv",
+            "source_col": "person",
+            "target_col": "spouse",
+            "train": 200,
+            "test": 200,
+            "tpl": "Who is the spouse of {}?"
+        },
+        {
+            "name": "MANUFACTURER",
+            "filename": "manufacturer.tsv",
+            "source_col": "model",
+            "target_col": "manufacturer",
+            "train": 200,
+            "test": 200,
+            "tpl": "Which business or enterprise manufactures {}?"
+        },
+        {
+            "name": "RECORD LABEL",
+            "filename": "record_label.tsv",
+            "source_col": "album",
+            "target_col": "label",
+            "train": 200,
+            "test": 200,
+            "tpl": "What is the record label of the album {}?"
+        },
+        {
+            "name": "AUTHOR",
+            "filename": "author.tsv",
+            "source_col": "work",
+            "target_col": "author",
+            "train": 200,
+            "test": 200,
+            "tpl": "Who is the author of the literary work entitled {}?"
+        },
+        {
+            "name": "FILM DIRECTOR OF PHOTOGRAPHY",
+            "filename": "director_photography.tsv",
+            "source_col": "film",
+            "target_col": "dirphoto",
+            "train": 200,
+            "test": 200,
+            "tpl": "Who was the director of photography for the film {}?"
+        }
+    ]
+}

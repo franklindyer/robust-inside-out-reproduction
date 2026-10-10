@@ -52,5 +52,8 @@ Final list:
 - 200/200 (HELD-OUT) CITY OF DEATH
 - 200/200 COMPANY OWNING A BRAND
 
-Division of train/test data?
-
+Steps to build split:
+- Remove entities that only have a Q-label and no human-readable name
+- Remove source column entities in each file with multiple corresponding target cols
+- Greedily pick train and test entities until meeting target number of rows
+- Dump list of entities in each partition (both Q-ID and label)
