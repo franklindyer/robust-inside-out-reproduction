@@ -1,3 +1,11 @@
+OVERALL TODO LIST:
+- [x] generate full list of entity-centered Wikidata questions
+- [ ] sample greedy and 1000 random answers for each question
+- [ ] use LLM judge to determine which QA pairs are correct
+- [ ] generate P(a|q) and P(a|q)_norm scores for each QA pair and model
+- [ ] generate P(True) scores for each QA pair and model
+- [ ] generate 
+
 Possible candidate Wikidata relations to use?
 - relations from original paper
     - P26 (spouse)

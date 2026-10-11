@@ -21,7 +21,10 @@ def load_wikidata(fdata):
         reader = csv.DictReader(f, delimiter='\t')
         for r in reader:
             src_col = r[fdata["source_col"] + "Label"]
+            tgt_col = r[fdata["target_col"] + "Label"]
             if re.fullmatch("Q[0-9]+", src_col):
+                continue
+            if re.fullmatch("Q[0-9]+", tgt_col):
                 continue
             data[src_col].append(r)
    
