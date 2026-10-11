@@ -75,4 +75,6 @@ for source_data in SOURCES:
                 question = source_data["tpl"].format(r[source_data["source_col"] + "Label"])
                 answer = r[source_data["target_col"] + "Label"]
                 f.write(f"{GLOBAL_ID}\t{question}\t{answer}\n")
-                GLOBAL_ID += 1   
+                GLOBAL_ID += 1
+
+print(f"Number of questions: {GLOBAL_ID}")
