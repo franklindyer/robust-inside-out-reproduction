@@ -72,6 +72,15 @@ def sample_model_outputs(model, tokenizer, prompt, sys_prompt="", n=100):
                 "p_norm": norm_p.item(),
             }
 
+    del gen
+    del normalized_scores
+    del mask
+    del lengths
+    del norm_logprob
+    del unnorm_prob
+    del norm_prob
+    del texts
+
     sampled_list = sorted(list(sampled_map.values()), key=lambda x: -x["count"])
     return sampled_list
 
@@ -110,12 +119,23 @@ def greedy_model_output(model, tokenizer, prompt, sys_prompt=""):
 
     txt = tokenizer.decode(gen, skip_special_tokens=True)
 
-    return {
+    result = {
         "text": txt,
         "length": lengths.item(),
         "p": unnorm_prob.item(),
         "p_norm": norm_prob.item(),
     }
+
+    del gen
+    del normalized_scores
+    del mask
+    del lengths
+    del norm_logprob
+    del unnorm_prob
+    del norm_prob
+    del txt
+
+    return result
 
 def greedy_and_sampled(model, tokenizer, prompt, sys_prompt=""):
     greedy_ans = greedy_model_output(model, tokenizer, prompt, sys_prompt=sys_prompt)
