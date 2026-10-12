@@ -1,5 +1,6 @@
 from collections import Counter, defaultdict
 import csv
+import gc
 import glob
 import json
 import os
@@ -149,6 +150,10 @@ def generate_answer_sample_batch(model_id, batch_num):
         q = ALL_QS[i]
         prompt = PROMPT_TPL.format(q["question"])
         results[i] = greedy_and_sampled(model, tokenizer, prompt)
+
+        if i % 20 == 0:
+            gc.collect()
+            torch.cuda.empty_cache()
 
     with open(out_fname, 'w') as f:
         f.write(json.dumps(results, indent=4, ensure_ascii=False))
