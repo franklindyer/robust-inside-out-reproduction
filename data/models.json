@@ -1,0 +1,14 @@
+{
+    "mistral-7b": {
+        "id": "mistral-7b",
+        "huggingface": "mistralai/Mistral-7B-Instruct-v0.3"
+    },
+    "llama3-8b": {
+        "id": "llama3-8b",
+        "huggingface": "meta-llama/Meta-Llama-3-8B-Instruct"
+    },
+    "gemma2-9b": {
+        "id": "gemma2-9b",
+        "huggingface": "google/gemma-2-9b-it"
+    }
+}

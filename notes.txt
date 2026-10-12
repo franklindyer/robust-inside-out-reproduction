@@ -4,7 +4,17 @@ OVERALL TODO LIST:
 - [ ] use LLM judge to determine which QA pairs are correct
 - [ ] generate P(a|q) and P(a|q)_norm scores for each QA pair and model
 - [ ] generate P(True) scores for each QA pair and model
-- [ ] generate 
+- [ ] determine set of "good" questions for use in logistic regression probe training
+- [ ] 
+
+When sampling answers for each question, need to make sure to also get the following:
+- P(a|q) and P(a|q)_norm scores for each sampled answer
+- count number of occurrences of each sampled answer
+
+Needs to be mentioned in the final paper:
+- I am not using a system prompt for any models, just a normal user prompt template
+- Using a wider variety of Wikidata relations for improved robustness
+- 
 
 Possible candidate Wikidata relations to use?
 - relations from original paper
