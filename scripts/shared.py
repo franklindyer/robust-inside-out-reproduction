@@ -164,7 +164,7 @@ def greedy_and_sampled(model, tokenizer, prompt, sys_prompt=""):
 # We use a fixed batch size of 500 for these runs
 def generate_answer_sample_batch(model_id, batch_num, batch_size=500):
     MODEL_INFO = json.loads(open("data/models.json").read())
-    PROMPT_TPL = open("data/templates/sampling.txt", 'r').read()
+    PROMPT_TPL = open("data/templates/sampling.txt", 'r').read() + "\n" # Add a trailing newline, since models tend to add it themselves otherwise
     ALL_QS = load_all_questions()
 
     out_dirname = f"data/sampled_answers/{model_id}"
