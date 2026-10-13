@@ -7,6 +7,10 @@
         "id": "llama3-8b",
         "huggingface": "meta-llama/Meta-Llama-3-8B-Instruct"
     },
+    "llama2-7b": {
+        "id": "llama2-7b",
+        "huggingface": "meta-llama/Meta-Llama-2-7B"
+    },
     "gemma2-9b": {
         "id": "gemma2-9b",
         "huggingface": "google/gemma-2-9b-it"
