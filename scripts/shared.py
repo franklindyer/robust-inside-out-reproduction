@@ -8,7 +8,7 @@ import os
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 import tqdm
 
 torch.manual_seed(67)
@@ -172,10 +172,20 @@ def generate_answer_sample_batch(model_id, batch_num, batch_size=500):
     if not os.path.isdir(out_dirname):
         os.mkdir(out_dirname)
 
+    quantization_config = BitsAndBytesConfig(
+        load_in_8bit=True,
+        llm_int8_threshold=6.0,
+    )
+
     model_hug_id = MODEL_INFO[model_id]["huggingface"]
     tokenizer = AutoTokenizer.from_pretrained(model_hug_id)
     model = AutoModelForCausalLM.from_pretrained(
-        model_hug_id, torch_dtype=torch.bfloat16, device_map="cuda"
+        model_hug_id,
+        quantization_config=quantization_config,
+        device_map="auto",
+        dtype="auto"
+        # torch_dtype=torch.bfloat16, 
+        # device_map="cuda"
     )
 
     results = {}
