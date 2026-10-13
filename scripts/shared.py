@@ -4,9 +4,13 @@ import gc
 import glob
 import json
 import os
+
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import tqdm
+
 
 def load_all_questions():
     q_dict = {}
@@ -171,9 +175,11 @@ def generate_answer_sample_batch(model_id, batch_num):
         prompt = PROMPT_TPL.format(q["question"])
         results[i] = greedy_and_sampled(model, tokenizer, prompt)
 
-        if i % 20 == 0:
-            gc.collect()
-            torch.cuda.empty_cache()
+        if i % 5 == 0:
+            n, gib = live_cuda_tensors_gib()
+            print(f"{i:5d}  alloc={torch.cuda.memory_allocated()/2**30:6.2f} GiB  "
+                  f"reserved={torch.cuda.memory_reserved()/2**30:6.2f} GiB  "
+                  f"live_tensors={n} ({gib:.2f} GiB)")        
 
     with open(out_fname, 'w') as f:
         f.write(json.dumps(results, indent=4, ensure_ascii=False))
