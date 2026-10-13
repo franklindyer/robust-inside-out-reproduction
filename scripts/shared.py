@@ -162,14 +162,13 @@ def greedy_and_sampled(model, tokenizer, prompt, sys_prompt=""):
     }
 
 # We use a fixed batch size of 500 for these runs
-def generate_answer_sample_batch(model_id, batch_num):
-    BATCH_SIZE = 500
+def generate_answer_sample_batch(model_id, batch_num, batch_size=500):
     MODEL_INFO = json.loads(open("data/models.json").read())
     PROMPT_TPL = open("data/templates/sampling.txt", 'r').read()
     ALL_QS = load_all_questions()
 
     out_dirname = f"data/sampled_answers/{model_id}"
-    out_fname = f"{out_dirname}/{str((batch_num+1)*BATCH_SIZE).zfill(5)}.json"
+    out_fname = f"{out_dirname}/{str((batch_num+1)*batch_size).zfill(5)}.json"
     if not os.path.isdir(out_dirname):
         os.mkdir(out_dirname)
 
@@ -180,7 +179,7 @@ def generate_answer_sample_batch(model_id, batch_num):
     )
 
     results = {}
-    for i in tqdm.tqdm(range(BATCH_SIZE*batch_num, BATCH_SIZE*(batch_num+1))):
+    for i in tqdm.tqdm(range(batch_size*batch_num, batch_size*(batch_num+1))):
         if not i in ALL_QS:
             continue
         q = ALL_QS[i]
