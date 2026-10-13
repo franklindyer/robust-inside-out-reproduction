@@ -11,6 +11,9 @@ import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import tqdm
 
+def live_cuda_tensors_gib():
+    ts = [o for o in gc.get_objects() if torch.is_tensor(o) and o.is_cuda]
+    return len(ts), sum(t.numel() * t.element_size() for t in ts) / 2**30
 
 def load_all_questions():
     q_dict = {}
