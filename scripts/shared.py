@@ -45,7 +45,7 @@ def sample_model_outputs(model, tokenizer, prompt, sys_prompt="", n=100, n_batch
 
     stop_ids = [tokenizer.eos_token_id]
     if tokenizer.pad_token_id is not None:
-        stop_ids.add(tokenizer.pad_token_id)
+        stop_ids.append(tokenizer.pad_token_id)
     def seq_key(ids):
         ids = ids.tolist()
         for i, t in enumerate(ids):
@@ -112,7 +112,7 @@ def greedy_model_output(model, tokenizer, prompt, sys_prompt=""):
 
     stop_ids = [tokenizer.eos_token_id]
     if tokenizer.pad_token_id is not None:
-        stop_ids.add(tokenizer.pad_token_id)
+        stop_ids.append(tokenizer.pad_token_id)
     def seq_key(ids):
         ids = ids.tolist()
         for i, t in enumerate(ids):
