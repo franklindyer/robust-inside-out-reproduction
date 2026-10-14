@@ -81,9 +81,9 @@ def sample_model_outputs(model, tokenizer, prompt, sys_prompt="", n=100, n_batch
             outputs.sequences, outputs.scores, normalize_logits=True
         ).float()
         pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
-        mask  = (gen != pad_id)
+        mask  = torch.logical_and(gen != tokenizer.pad_token_id, gen != tokenizer.eos_token_id)
         normalized_scores = normalized_scores.masked_fill(~mask, 0.0)
-        lengths = (normalized_scores < 0).sum(dim=1).clamp(min=1)
+        lengths = mask.sum(dim=1)
         norm_logprob = normalized_scores.sum(dim=1)
         unnorm_prob = torch.exp(norm_logprob)
         norm_prob = torch.exp(norm_logprob / lengths)
@@ -91,7 +91,7 @@ def sample_model_outputs(model, tokenizer, prompt, sys_prompt="", n=100, n_batch
         texts = tokenizer.batch_decode(gen, skip_special_tokens=True)
         out_counter = Counter(texts)
         
-        for seq, txt, l, norm_p, unnorm_p in zip(gen, texts, lengths, norm_prob, unnorm_prob):
+        for seq, txt, l, norm_p, unnorm_p, length, norm_lp, norm_scores in zip(gen, texts, lengths, norm_prob, unnorm_prob, lengths, norm_logprob, normalized_scores):
             key = seq_key(seq)
             if not key in sampled_map:
                 sampled_map[key] = {
@@ -101,6 +101,10 @@ def sample_model_outputs(model, tokenizer, prompt, sys_prompt="", n=100, n_batch
                     "count": 0,
                     "p": unnorm_p.item(),
                     "p_norm": norm_p.item(),
+
+                    "length": length.item(),
+                    "norm_logprob": norm_lp.item(),
+                    "normalized_scores": norm_scores.tolist()
                 }
             sampled_map[key]["count"] += 1
     
@@ -142,10 +146,10 @@ def greedy_model_output(model, tokenizer, prompt, sys_prompt=""):
         output.sequences, output.scores, normalize_logits=True
     ).float()
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
-    mask  = (gen != pad_id)
+    mask  = torch.logical_and(gen != tokenizer.pad_token_id, gen != tokenizer.eos_token_id)
     normalized_scores = normalized_scores.masked_fill(~mask, 0.0)
-    lengths = (normalized_scores < 0).sum(dim=1).clamp(min=1)
-    norm_logprob = normalized_scores.sum(dim=1)
+    lengths = mask.sum()
+    norm_logprob = normalized_scores.sum()
     unnorm_prob = torch.exp(norm_logprob)
     norm_prob = torch.exp(norm_logprob / lengths)
 
@@ -157,6 +161,10 @@ def greedy_model_output(model, tokenizer, prompt, sys_prompt=""):
         "length": lengths.item(),
         "p": unnorm_prob.item(),
         "p_norm": norm_prob.item(),
+
+        "length": lengths.item(),
+        "norm_logprob": norm_logprob.item(),
+        "normalized_scores": normalized_scores.tolist()[0]
     }
     
     return result
@@ -210,4 +218,5 @@ def generate_answer_sample_batch(model_id, batch_num, batch_size=500):
 
     with open(out_fname, 'w') as f:
         f.write(json.dumps(results, indent=4, ensure_ascii=False))
+
 
