@@ -39,64 +39,59 @@ def load_all_questions():
                     }
     return q_dict
 
-def sample_model_outputs(model, tokenizer, prompt, sys_prompt="", n=100):
+def sample_model_outputs(model, tokenizer, prompt, sys_prompt="", n=100, n_batch=100):
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    
-    with torch.inference_mode():
-        outputs = model.generate(
-            **inputs,
-            do_sample=True,
-            num_return_sequences=n,
-            max_new_tokens=64,
-            temperature=1,
-            top_p=0.95,
-            num_beams=1,
-            stop_strings=["\n"],
-            tokenizer=tokenizer,
-            pad_token_id=tokenizer.eos_token_id,
-            renormalize_logits=False,
-            return_dict_in_generate=True,
-            output_scores=True,
-            output_logits=True
-        )
-
-    prompt_len = inputs.input_ids.shape[1]
-    gen = outputs.sequences[:, prompt_len:]
-
-    normalized_scores = model.compute_transition_scores(
-        outputs.sequences, outputs.scores, normalize_logits=True
-    ).float()
-    pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
-    mask  = (gen != pad_id)
-    normalized_scores = normalized_scores.masked_fill(~mask, 0.0)
-    lengths = (normalized_scores < 0).sum(dim=1).clamp(min=1)
-    norm_logprob = normalized_scores.sum(dim=1)
-    unnorm_prob = torch.exp(norm_logprob)
-    norm_prob = torch.exp(norm_logprob / lengths)
-
-    texts = tokenizer.batch_decode(gen, skip_special_tokens=True)
-    out_counter = Counter(texts)
-    
     sampled_map = {}
-    for txt, l, norm_p, unnorm_p in zip(texts, lengths, norm_prob, unnorm_prob):
-        if not txt in sampled_map:
-            sampled_map[txt] = {
-                "text": txt,
-                "length": l.item(),
-                "count": out_counter[txt],
-                "p": unnorm_p.item(),
-                "p_norm": norm_p.item(),
-            }
 
-    del gen
-    del normalized_scores
-    del mask
-    del lengths
-    del norm_logprob
-    del unnorm_prob
-    del norm_prob
-    del texts
-
+    # Run the samples in minibatches, since doing them all at once gives tensors that are too large
+    for batch_num in range(n // n_batch):
+        with torch.inference_mode():
+            outputs = model.generate(
+                **inputs,
+                do_sample=True,
+                num_return_sequences=n_batch,
+                max_new_tokens=64,
+                temperature=1,
+                top_p=1,
+                top_k=0,
+                num_beams=1,
+                stop_strings=["\n"],
+                tokenizer=tokenizer,
+                pad_token_id=tokenizer.eos_token_id,
+                renormalize_logits=False,
+                return_dict_in_generate=True,
+                output_scores=True,
+                output_logits=True
+            )
+    
+        prompt_len = inputs.input_ids.shape[1]
+        gen = outputs.sequences[:, prompt_len:]
+    
+        normalized_scores = model.compute_transition_scores(
+            outputs.sequences, outputs.scores, normalize_logits=True
+        ).float()
+        pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
+        mask  = (gen != pad_id)
+        normalized_scores = normalized_scores.masked_fill(~mask, 0.0)
+        lengths = (normalized_scores < 0).sum(dim=1).clamp(min=1)
+        norm_logprob = normalized_scores.sum(dim=1)
+        unnorm_prob = torch.exp(norm_logprob)
+        norm_prob = torch.exp(norm_logprob / lengths)
+    
+        texts = tokenizer.batch_decode(gen, skip_special_tokens=True)
+        out_counter = Counter(texts)
+        
+        for txt, l, norm_p, unnorm_p in zip(texts, lengths, norm_prob, unnorm_prob):
+            if not txt in sampled_map:
+                sampled_map[txt] = {
+                    "text": txt,
+                    "length": l.item(),
+                    "count": 0,
+                    "p": unnorm_p.item(),
+                    "p_norm": norm_p.item(),
+                }
+            sampled_map[txt]["count"] += out_counter[txt]
+    
     sampled_list = sorted(list(sampled_map.values()), key=lambda x: -x["count"])
     return sampled_list
 
@@ -109,7 +104,6 @@ def greedy_model_output(model, tokenizer, prompt, sys_prompt=""):
             do_sample=False,
             max_new_tokens=64,
             temperature=1,
-            top_p=0.95,
             stop_strings=["\n"],
             tokenizer=tokenizer,
             pad_token_id=tokenizer.eos_token_id,
@@ -141,21 +135,12 @@ def greedy_model_output(model, tokenizer, prompt, sys_prompt=""):
         "p": unnorm_prob.item(),
         "p_norm": norm_prob.item(),
     }
-
-    del gen
-    del normalized_scores
-    del mask
-    del lengths
-    del norm_logprob
-    del unnorm_prob
-    del norm_prob
-    del txt
-
+    
     return result
 
 def greedy_and_sampled(model, tokenizer, prompt, sys_prompt=""):
     greedy_ans = greedy_model_output(model, tokenizer, prompt, sys_prompt=sys_prompt)
-    sampled_ans = sample_model_outputs(model, tokenizer, prompt, sys_prompt=sys_prompt, n=1000)
+    sampled_ans = sample_model_outputs(model, tokenizer, prompt, sys_prompt=sys_prompt, n=1000, n_batch=100)
     return {
         "greedy": greedy_ans,
         "sampled": sampled_ans
@@ -172,15 +157,17 @@ def generate_answer_sample_batch(model_id, batch_num, batch_size=500):
     if not os.path.isdir(out_dirname):
         os.mkdir(out_dirname)
 
+    quantization_config = BitsAndBytesConfig(
+        load_in_8bit=True,
+        llm_int8_threshold=6.0,
+    )
+
     model_hug_id = MODEL_INFO[model_id]["huggingface"]
     tokenizer = AutoTokenizer.from_pretrained(model_hug_id)
     model = AutoModelForCausalLM.from_pretrained(
         model_hug_id,
-        # quantization_config=quantization_config,
-        # device_map="auto",
-        # dtype="auto"
-        torch_dtype=torch.bfloat16, 
-        device_map="cuda"
+        dtype=torch.bfloat16, 
+        device_map="auto"
     )
 
     results = {}
@@ -199,3 +186,4 @@ def generate_answer_sample_batch(model_id, batch_num, batch_size=500):
 
     with open(out_fname, 'w') as f:
         f.write(json.dumps(results, indent=4, ensure_ascii=False))
+
