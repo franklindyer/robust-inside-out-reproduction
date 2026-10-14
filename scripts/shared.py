@@ -43,6 +43,16 @@ def sample_model_outputs(model, tokenizer, prompt, sys_prompt="", n=100, n_batch
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     sampled_map = {}
 
+    stop_ids = [tokenizer.eos_token_id]
+    if tokenizer.pad_token_id is not None:
+        stop_ids.add(tokenizer.pad_token_id)
+    def seq_key(ids):
+        ids = ids.tolist()
+        for i, t in enumerate(ids):
+            if t in stop_ids:
+                return tuple(ids[:i])
+        return tuple(ids)
+
     # Run the samples in minibatches, since doing them all at once gives tensors that are too large
     for batch_num in range(n // n_batch):
         with torch.inference_mode():
@@ -81,22 +91,34 @@ def sample_model_outputs(model, tokenizer, prompt, sys_prompt="", n=100, n_batch
         texts = tokenizer.batch_decode(gen, skip_special_tokens=True)
         out_counter = Counter(texts)
         
-        for txt, l, norm_p, unnorm_p in zip(texts, lengths, norm_prob, unnorm_prob):
-            if not txt in sampled_map:
-                sampled_map[txt] = {
+        for seq, txt, l, norm_p, unnorm_p in zip(gen, texts, lengths, norm_prob, unnorm_prob):
+            key = seq_key(seq)
+            if not key in sampled_map:
+                sampled_map[key] = {
                     "text": txt,
+                    "tokens": key,
                     "length": l.item(),
                     "count": 0,
                     "p": unnorm_p.item(),
                     "p_norm": norm_p.item(),
                 }
-            sampled_map[txt]["count"] += out_counter[txt]
+            sampled_map[key]["count"] += 1
     
     sampled_list = sorted(list(sampled_map.values()), key=lambda x: -x["count"])
     return sampled_list
 
 def greedy_model_output(model, tokenizer, prompt, sys_prompt=""):
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+
+    stop_ids = [tokenizer.eos_token_id]
+    if tokenizer.pad_token_id is not None:
+        stop_ids.add(tokenizer.pad_token_id)
+    def seq_key(ids):
+        ids = ids.tolist()
+        for i, t in enumerate(ids):
+            if t in stop_ids:
+                return tuple(ids[:i])
+        return tuple(ids)
     
     with torch.inference_mode():
         output = model.generate(
@@ -131,6 +153,7 @@ def greedy_model_output(model, tokenizer, prompt, sys_prompt=""):
 
     result = {
         "text": txt,
+        "key": seq_key(gen),
         "length": lengths.item(),
         "p": unnorm_prob.item(),
         "p_norm": norm_prob.item(),
@@ -169,6 +192,7 @@ def generate_answer_sample_batch(model_id, batch_num, batch_size=500):
         dtype=torch.bfloat16, 
         device_map="auto"
     )
+    model.eval()
 
     results = {}
     for i in tqdm.tqdm(range(batch_size*batch_num, batch_size*(batch_num+1))):

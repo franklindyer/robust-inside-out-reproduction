@@ -14,7 +14,7 @@ When sampling answers for each question, need to make sure to also get the follo
 Needs to be mentioned in the final paper:
 - I am not using a system prompt for any models, just a normal user prompt template
 - Using a wider variety of Wikidata relations for improved robustness
-- 
+- Subtle arithmetic internals may affect exact probability values: https://discuss.huggingface.co/t/results-of-model-generate-are-different-for-different-batch-sizes-of-the-decode-only-model/34878/6 
 
 Possible candidate Wikidata relations to use?
 - relations from original paper
