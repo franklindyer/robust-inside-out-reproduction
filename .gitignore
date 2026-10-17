@@ -2,3 +2,7 @@
 **/.DS_Store
 **/venv
 **/*.swp
+
+data/wikidata
+data/splits
+data/sampled_answers

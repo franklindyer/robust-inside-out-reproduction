@@ -1,3 +1,5 @@
+accelerate
 bitsandbytes
+psutil
 transformers
 torch

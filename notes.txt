@@ -1,11 +1,14 @@
 OVERALL TODO LIST:
 - [x] generate full list of entity-centered Wikidata questions
 - [ ] sample greedy and 1000 random answers for each question
-- [ ] use LLM judge to determine which QA pairs are correct
+- [ ] come up with some simple string heuristics for automatically judging some answers as equivalent
+- [ ] use LLM judge to determine which answers are equivalent
 - [ ] generate P(a|q) and P(a|q)_norm scores for each QA pair and model
 - [ ] generate P(True) scores for each QA pair and model
 - [ ] determine set of "good" questions for use in logistic regression probe training
 - [ ] 
+- [ ] generate statistics and figures of generated LLM answers
+- [ ] BONUS: analysis/post-mortem of non-sequitur or ill-formatted sampled LLM answers
 
 When sampling answers for each question, need to make sure to also get the following:
 - P(a|q) and P(a|q)_norm scores for each sampled answer
