@@ -193,3 +193,11 @@ def generate_answer_sample_batch(model_id, batch_num, batch_size=500):
 
     with open(out_fname, 'w') as f:
         f.write(json.dumps(results, indent=4, ensure_ascii=False))
+
+def load_sampled_answers(folder_path):
+    j_full = {}
+    for fname in os.listdir(folder_path):
+        j = json.loads(open(f"{folder_path}/{fname}", 'r').read())
+        j_full.update(j)
+    return j_full
+
