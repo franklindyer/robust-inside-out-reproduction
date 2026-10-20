@@ -21,6 +21,20 @@ random.seed(SEED)
 
 QS = load_all_questions()
 
+train_gold = defaultdict(lambda: set())
+
+for id in QS:
+    q = QS[id]
+    if not q["split"] == "train":
+        continue
+    train_gold[q["type"]].add(q["answer"])
+
+for q_cat in train_gold:
+    train_gold[q_cat] = list(random.sample(list(train_gold[q_cat]), k=20))
+
+with open("data/selected_answers/train_gold.json", 'w') as f:
+    f.write(json.dumps(train_gold, indent=4, ensure_ascii=False))
+    
 commonly_sampled_by_model = {}
 
 for model_id in ["mistral-7b", "llama3-8b", "gemma2-9b"]:
@@ -58,4 +72,5 @@ for model_id in ["mistral-7b", "llama3-8b", "gemma2-9b"]:
         }
 
 with open("data/selected_answers/train_commonly_sampled.json", 'w') as f:
-    f.write(json.dumps(commonly_sampled_by_model, indent=4, ensure_ascii=False)) 
+    f.write(json.dumps(commonly_sampled_by_model, indent=4, ensure_ascii=False))
+
