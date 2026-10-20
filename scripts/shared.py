@@ -24,16 +24,19 @@ def live_cuda_tensors_gib():
             continue
     return n, total / 2**30
 
-def load_all_questions():
+def load_all_questions(folder="data/splits"):
     q_dict = {}
     for subdir in ["train", "test", "dev"]:
-        for fname in glob.glob(f"data/splits/{subdir}/*.tsv"):
+        for fname in glob.glob(f"{folder}/{subdir}/*.tsv"):
             with open(fname, 'r') as f:
+                qtype = os.path.basename(fname)[:-4]
                 reader = csv.reader(f, delimiter="\t")
                 for r in reader:
                     id = int(r[0])
                     q_dict[id] = {
                         "id": id,
+                        "split": subdir,
+                        "type": qtype,
                         "question": r[1],
                         "answer": r[2]
                     }
