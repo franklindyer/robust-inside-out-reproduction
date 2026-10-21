@@ -322,7 +322,7 @@ def generate_tf_answer_batch(model_id, batch_num, batch_size=500):
         ans_results = []
         for ans_opt in opts_gen(q):
             prompt = PROMPT_TPL.format(q["question"], ans_opt["text"].strip())
-            ab_probs = next_token_probs_ab(model, tokenizer, PROMPT) 
+            ab_probs = next_token_probs_ab(model, tokenizer, prompt) 
             ans_opt["ab_probs"] = ab_probs
             ans_results.append(ans_opt)
 
