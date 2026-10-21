@@ -38,7 +38,8 @@ def load_all_questions(folder="data/splits"):
                         "split": subdir,
                         "type": qtype,
                         "question": r[1],
-                        "answer": r[2]
+                        "answer": r[2],
+                        "source_entity": r[3]
                     }
     return q_dict
 
@@ -204,3 +205,87 @@ def load_sampled_answers(folder_path):
         j_full.update(j)
     return j_full
 
+def answer_options_gen_for_batch(model_id, batch_num, batch_size=500):
+    train_gold = json.loads(open("data/selected_answers/train_gold.json").read())
+    train_sampled = json.loads(open("data/selected_answers/train_commonly_sampled.json").read())
+
+    sampled_fname = f"./data/sampled_answers/{model_id}/{str(500*(1+batch_num)).zfill(5)}.json"
+    sampled_batch = json.loads(open(sampled_fname).read())
+
+    def answer_options_list(q):
+        ans_opts = []
+
+        # Gold answer
+        ans_opts.append({
+            "text": q["answer"],
+            "source": "gold"
+        })
+
+        # Source entity distractor
+        ans_opts.append({
+            "text": q["source_entity"],
+            "source": "source_entity"
+        })
+
+        # Training gold answers
+        ans_opts += [
+            { 
+                "text": ans_text, 
+                "source": "train_gold"
+            }
+            for ans_text in train_gold[q["type"]]
+        ]
+
+        # Training commonly sampled answers
+        ans_opts += [
+            { 
+                "text": ans_text, 
+                "source": "train_sampled"
+            }
+            for ans_text in train_sampled[model_id][q["type"]]
+        ]
+
+        # Answer sampled > 1 times by the specific model
+        ans_opts += [
+            {
+                "text": sampled["text"],
+                "source": "sampled"
+            }
+            for sampled in sampled_batch[str(q["id"])]["sampled"]
+            if sampled["count"] > 1
+        ]
+
+        return ans_opts
+
+    return answer_options_list
+
+def next_token_probs_ab(model, tokenizer, prompt):
+    a_id = tokenizer.encode("A", add_special_tokens=False)[0]
+    b_id = tokenizer.encode("B", add_special_tokens=False)[0]
+    
+    inputs = tokenizer(PROMPT, return_tensors="pt").to(model.device)
+    outputs = model.generate(
+            **inputs,
+            do_sample=True,
+            max_new_tokens=1,
+            temperature=1,
+            num_beams=1,
+            tokenizer=tokenizer,
+            pad_token_id=tokenizer.eos_token_id,
+            renormalize_logits=False,
+            return_dict_in_generate=True,
+            output_scores=True,
+            output_logits=True
+        )
+
+    logits = outputs.logits[0].float()
+    row = logits[0]
+    top = torch.topk(row, k=10)
+    probs = torch.softmax(row, dim=-1)
+
+    return {
+        "a_logit": row[a_id].item(),
+        "a_prob": probs[a_id].item(),
+        "b_logit": row[b_id].item(),
+        "b_prob": probs[b_id].item(),
+    }

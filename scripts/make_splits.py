@@ -72,9 +72,10 @@ for source_data in SOURCES:
     for dirname, data_rows in [("train", train_rows), ("test", test_rows), ("dev", dev_rows)]: 
         with open(f"data/splits/{dirname}/{source_data['filename']}", 'w') as f:
             for r in data_rows:
-                question = source_data["tpl"].format(r[source_data["source_col"] + "Label"])
+                source_entity = r[source_data["source_col"] + "Label"]
+                question = source_data["tpl"].format(source_entity)
                 answer = r[source_data["target_col"] + "Label"]
-                f.write(f"{GLOBAL_ID}\t{question}\t{answer}\n")
+                f.write(f"{GLOBAL_ID}\t{question}\t{answer}\t{source_entity}\n")
                 GLOBAL_ID += 1
 
 print(f"Number of questions: {GLOBAL_ID}")
