@@ -263,7 +263,7 @@ def next_token_probs_ab(model, tokenizer, prompt):
     a_id = tokenizer.encode("A", add_special_tokens=False)[0]
     b_id = tokenizer.encode("B", add_special_tokens=False)[0]
     
-    inputs = tokenizer(PROMPT, return_tensors="pt").to(model.device)
+    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     outputs = model.generate(
             **inputs,
             do_sample=True,

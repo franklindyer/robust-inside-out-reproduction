@@ -3,6 +3,7 @@
 **/venv
 **/*.swp
 **/.*
+**/dump.txt
 
 data/wikidata
 data/splits
