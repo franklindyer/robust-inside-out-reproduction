@@ -260,9 +260,6 @@ def answer_options_gen_for_batch(model_id, batch_num, batch_size=500):
     return answer_options_list
 
 def next_token_probs_ab(model, tokenizer, prompt):
-    a_id = tokenizer.encode("A", add_special_tokens=False)[0]
-    b_id = tokenizer.encode("B", add_special_tokens=False)[0]
-    
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     outputs = model.generate(
             **inputs,
@@ -278,17 +275,30 @@ def next_token_probs_ab(model, tokenizer, prompt):
             output_logits=True
         )
 
+    # Note: we cannot directly get the output probabilities because the tokenizer is not a bijective
+    #    mapping, i.e. multiple IDs may correspond to the strings "A" and "B"
+    result = {
+        "a_logit": None,
+        "a_prob": None,
+        "b_logit": None,
+        "b_prob": None,
+    }
+
     logits = outputs.logits[0].float()
     row = logits[0]
     top = torch.topk(row, k=10)
-    probs = torch.softmax(row, dim=-1)
+    probs = torch.softmax(row, dim=-1)[top.indices]
+    
+    for (tid, lg, p) in zip(top.indices.tolist(), top.values.tolist(), probs.tolist()):
+        tok_str = tokenizer.decode([tid])
+        if tok_str == "A" and result["a_logit"] is None:
+            result["a_logit"] = lg
+            result["a_prob"] = p
+        elif tok_str == "B" and result["b_logit"] is None:
+            result["b_logit"] = lg
+            result["b_prob"] = p
 
-    return {
-        "a_logit": row[a_id].item(),
-        "a_prob": probs[a_id].item(),
-        "b_logit": row[b_id].item(),
-        "b_prob": probs[b_id].item(),
-    }
+    return result
 
 def generate_tf_answer_batch(model_id, batch_num, batch_size=500):
     MODEL_INFO = json.loads(open("data/models.json").read())
