@@ -289,3 +289,46 @@ def next_token_probs_ab(model, tokenizer, prompt):
         "b_logit": row[b_id].item(),
         "b_prob": probs[b_id].item(),
     }
+
+def generate_tf_answer_batch(model_id, batch_num, batch_size=500):
+    MODEL_INFO = json.loads(open("data/models.json").read())
+    PROMPT_TPL = open("data/templates/verification.txt", 'r').read()
+    ALL_QS = load_all_questions()
+
+    out_dirname = f"data/tf_answers/{model_id}"
+    out_fname = f"{out_dirname}/{str((batch_num+1)*batch_size).zfill(5)}.json"
+    if not os.path.isdir(out_dirname):
+        os.mkdir(out_dirname)
+
+    model_hug_id = MODEL_INFO[model_id]["huggingface"]
+    tokenizer = AutoTokenizer.from_pretrained(model_hug_id)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_hug_id,
+        dtype=torch.bfloat16, 
+        device_map="auto"
+    )
+    model.eval()
+
+    results = {}
+    opts_gen = answer_options_gen_for_batch(model_id, batch_num)
+    for i in tqdm.tqdm(range(batch_size*batch_num, batch_size*(batch_num+1))):
+        if not i in ALL_QS:
+            continue
+        q = ALL_QS[i]
+        # Only applies to test set
+        if not q["split"] == "test":
+            continue
+
+        ans_results = []
+        for ans_opt in opts_gen(q):
+            prompt = PROMPT_TPL.format(q["question"], ans_opt["text"].strip())
+            ab_probs = next_token_probs_ab(model, tokenizer, PROMPT) 
+            ans_opt["ab_probs"] = ab_probs
+            ans_results.append(ans_opt)
+
+        results[i] = ans_results
+
+    with open(out_fname, 'w') as f:
+        f.write(json.dumps(results, indent=4, ensure_ascii=False))
+
+
