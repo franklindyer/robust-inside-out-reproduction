@@ -4,6 +4,7 @@ import gc
 import glob
 import json
 import os
+from unidecode import unidecode
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
@@ -221,6 +222,16 @@ def answer_options_gen_for_batch(model_id, batch_num, batch_size=500):
             "source": "gold"
         })
 
+        # Answer sampled > 1 times by the specific model
+        ans_opts += [
+            {
+                "text": sampled["text"],
+                "source": "sampled"
+            }
+            for sampled in sampled_batch[str(q["id"])]["sampled"]
+            if sampled["count"] > 1
+        ]
+
         # Source entity distractor
         ans_opts.append({
             "text": q["source_entity"],
@@ -245,17 +256,32 @@ def answer_options_gen_for_batch(model_id, batch_num, batch_size=500):
             for ans_text in train_sampled[model_id][q["type"]]
         ]
 
-        # Answer sampled > 1 times by the specific model
-        ans_opts += [
-            {
-                "text": sampled["text"],
-                "source": "sampled"
-            }
-            for sampled in sampled_batch[str(q["id"])]["sampled"]
-            if sampled["count"] > 1
-        ]
+        def normalize_ans(s):
+            s = s.strip()
+            s = unidecode(s)
+            s = s.translate(str.maketrans(' ', ' ', string.punctuation))
+            s = s.lower()
+            return s
 
-        return ans_opts
+        ans_opts_dedup = []
+        ans_raw = set()
+        gold_normalized = normalize_ans(q["answer"])
+
+        # For now, we just use normalized string comparison to decide "correctness"
+        # Final pass deduplicating exactly matching answers and marking correctness
+        for ans_opt in ans_opts:
+            ans_opt["correct"] = False
+            ans_opt_norm = normalize_ans(ans_opt["text"])
+
+            if ans_opt["text"] in ans_raw:
+                continue
+            if ans_opt_norm == gold_normalized:
+                ans_opt["correct"] = True
+        
+            ans_opts_dedup.append(ans_opt)
+            ans_raw.add(ans_opt["text"])
+
+        return ans_opts_dedup
 
     return answer_options_list
 
