@@ -281,13 +281,13 @@ def answer_options_gen_for_model(model_id, n_batches=15, batch_size=500):
 
     all_answer_opts = {}
     for batch_id in range(n_batches):
-        get_options_list = answer_options_gen_for_batch(model_id, batch_num, batch_size=batch_size)
+        get_options_list = answer_options_gen_for_batch(model_id, batch_id, batch_size=batch_size)
         print(f"Generating batch {batch_id} of {n_batches}...")
         for q_id in tqdm.tqdm(range(batch_size*batch_id, batch_size*(batch_id+1))):
             q = qs[q_id]
             answer_options = get_options_list(q)
             gold_text = q["answer"]
-            for i in range(answer_options):
+            for i in range(len(answer_options)):
                 ans_text = answer_options[i]["text"]
                 answer_options[i]["correct"] = r_bert.compute_score(gold_text, ans_text)[0] > 0.5
             all_answer_opts[q_id] = answer_options
