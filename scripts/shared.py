@@ -225,7 +225,7 @@ def answer_options_gen_for_batch(model_id, batch_num, batch_size=500):
         # Answer sampled > 1 times by the specific model
         ans_opts += [
             {
-                "text": sampled["text"],
+                "text": sampled["text"].strip(),
                 "source": "sampled"
             }
             for sampled in sampled_batch[str(q["id"])]["sampled"]
