@@ -5,13 +5,14 @@ import glob
 import json
 import os
 import string
+import tqdm
 from unidecode import unidecode
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-import tqdm
+from qa_metrics.RewardBert import RewardBert
 
 torch.manual_seed(67)
 
@@ -257,34 +258,42 @@ def answer_options_gen_for_batch(model_id, batch_num, batch_size=500):
             for ans_text in train_sampled[model_id][q["type"]]
         ]
 
-        def normalize_ans(s):
-            s = s.strip()
-            s = unidecode(s)
-            s = s.translate(str.maketrans(' ', ' ', string.punctuation))
-            s = s.lower()
-            return s
-
         ans_opts_dedup = []
         ans_raw = set()
-        gold_normalized = normalize_ans(q["answer"])
 
-        # For now, we just use normalized string comparison to decide "correctness"
-        # Final pass deduplicating exactly matching answers and marking correctness
         for ans_opt in ans_opts:
-            ans_opt["correct"] = False
-            ans_opt_norm = normalize_ans(ans_opt["text"])
-
             if ans_opt["text"] in ans_raw:
                 continue
-            if ans_opt_norm == gold_normalized:
-                ans_opt["correct"] = True
-        
             ans_opts_dedup.append(ans_opt)
             ans_raw.add(ans_opt["text"])
 
         return ans_opts_dedup
 
     return answer_options_list
+
+def answer_options_gen_for_model(model_id, n_batches=15, batch_size=500):
+    qs = load_all_questions()
+    r_bert = RewardBert(device='cuda')    
+
+    out_dir = f"data/answer_options/{model_id}"
+    if not os.path.isdir(out_dir):
+        os.mkdir(out_dir)
+
+    all_answer_opts = {}
+    for batch_id in range(n_batches):
+        get_options_list = answer_options_gen_for_batch(model_id, batch_num, batch_size=batch_size)
+        print(f"Generating batch {batch_id} of {n_batches}...")
+        for q_id in tqdm.tqdm(range(batch_size*batch_id, batch_size*(batch_id+1))):
+            q = qs[q_id]
+            answer_options = get_options_list(q)
+            gold_text = q["answer"]
+            for i in range(answer_options):
+                ans_text = answer_options[i]["text"]
+                answer_options[i]["correct"] = r_bert.compute_score(gold_text, ans_text)[0] > 0.5
+            all_answer_opts[q_id] = answer_options
+ 
+    with open(f"{out_dir}/all.json") as f:
+        f.write(json.dumps(all_answer_opts))
 
 def next_token_probs_ab(model, tokenizer, prompt):
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
