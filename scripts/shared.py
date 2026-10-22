@@ -292,7 +292,7 @@ def answer_options_gen_for_model(model_id, n_batches=15, batch_size=500):
                 answer_options[i]["correct"] = r_bert.compute_score(gold_text, ans_text)[0] > 0.5
             all_answer_opts[q_id] = answer_options
  
-    with open(f"{out_dir}/all.json") as f:
+    with open(f"{out_dir}/all.json", 'w') as f:
         f.write(json.dumps(all_answer_opts, indent=4, ensure_ascii=False))
 
 def next_token_probs_ab(model, tokenizer, prompt):
