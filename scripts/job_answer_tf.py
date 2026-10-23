@@ -5,7 +5,6 @@ sys.path.append("./scripts")
 from shared import *
 
 model_id = sys.argv[1]
-batch_num = int(sys.argv[2])
 
 if __name__ == "__main__":
-    generate_tf_answer_batch(model_id, batch_num)
+    generate_tf_answer_batch(model_id)

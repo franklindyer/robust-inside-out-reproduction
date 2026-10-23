@@ -252,7 +252,7 @@ def answer_options_gen_for_batch(model_id, batch_num, batch_size=500):
         # Training commonly sampled answers
         ans_opts += [
             { 
-                "text": ans_text, 
+                "text": ans_text.strip(), 
                 "source": "train_sampled"
             }
             for ans_text in train_sampled[model_id][q["type"]]
@@ -336,15 +336,11 @@ def next_token_probs_ab(model, tokenizer, prompt):
 
     return result
 
-def generate_tf_answer_batch(model_id, batch_num, batch_size=500):
+def generate_tf_answer_batches(model_id, num_batches=15, batch_size=500):
     MODEL_INFO = json.loads(open("data/models.json").read())
     PROMPT_TPL = open("data/templates/verification.txt", 'r').read()
     ALL_QS = load_all_questions()
-
-    out_dirname = f"data/tf_answers/{model_id}"
-    out_fname = f"{out_dirname}/{str((batch_num+1)*batch_size).zfill(5)}.json"
-    if not os.path.isdir(out_dirname):
-        os.mkdir(out_dirname)
+    ALL_ANS = json.loads(open(f"data/answer_options/{model_id}/all.json").read())
 
     model_hug_id = MODEL_INFO[model_id]["huggingface"]
     tokenizer = AutoTokenizer.from_pretrained(model_hug_id)
@@ -355,26 +351,32 @@ def generate_tf_answer_batch(model_id, batch_num, batch_size=500):
     )
     model.eval()
 
-    results = {}
-    opts_gen = answer_options_gen_for_batch(model_id, batch_num)
-    for i in tqdm.tqdm(range(batch_size*batch_num, batch_size*(batch_num+1))):
-        if not i in ALL_QS:
-            continue
-        q = ALL_QS[i]
-        # Only applies to test set
-        if not q["split"] == "test":
-            continue
-
-        ans_results = []
-        for ans_opt in opts_gen(q):
-            prompt = PROMPT_TPL.format(q["question"], ans_opt["text"].strip())
-            ab_probs = next_token_probs_ab(model, tokenizer, prompt) 
-            ans_opt["ab_probs"] = ab_probs
-            ans_results.append(ans_opt)
-
-        results[i] = ans_results
-
-    with open(out_fname, 'w') as f:
-        f.write(json.dumps(results, indent=4, ensure_ascii=False))
-
-
+    for batch_num in range(num_batches):
+        print(f"Generating batch {batch_num} of {num_batches}...")
+        
+        out_dirname = f"data/tf_answers/{model_id}"
+        out_fname = f"{out_dirname}/{str((batch_num+1)*batch_size).zfill(5)}.json"
+        if not os.path.isdir(out_dirname):
+            os.mkdir(out_dirname)
+    
+        results = {}
+        opts_gen = answer_options_gen_for_batch(model_id, batch_num)
+        for i in tqdm.tqdm(range(batch_size*batch_num, batch_size*(batch_num+1))):
+            if not i in ALL_QS:
+                continue
+            q = ALL_QS[i]
+            # Only applies to test set
+            if not q["split"] == "test":
+                continue
+    
+            ans_results = []
+            for ans_opt in ALL_ANS[str(i)]:
+                prompt = PROMPT_TPL.format(q["question"], ans_opt["text"])
+                ab_probs = next_token_probs_ab(model, tokenizer, prompt) 
+                # ans_opt["ab_probs"] = ab_probs
+                ans_results.append(ab_probs)
+    
+            results[i] = ans_results
+    
+        with open(out_fname, 'w') as f:
+            f.write(json.dumps(results, indent=4, ensure_ascii=False))
