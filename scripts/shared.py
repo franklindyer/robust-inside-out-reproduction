@@ -287,9 +287,29 @@ def answer_options_gen_for_model(model_id, n_batches=15, batch_size=500):
             q = qs[q_id]
             answer_options = get_options_list(q)
             gold_text = q["answer"]
+
+            def normalize_str(s):
+                s = s.strip()
+                s = s.lower()
+                s = unidecode(s)
+                s = s.translate(str.maketrans('', '', string.punctuation)) 
+                return s
+
+            norm_answers_marked_correct = set()
             for i in range(len(answer_options)):
                 ans_text = answer_options[i]["text"]
-                answer_options[i]["correct"] = r_bert.compute_score(gold_text, ans_text)[0] > 0.5
+                is_correct = r_bert.compute_score(gold_text, ans_text)[0] > 0.5
+                answer_options[i]["correct"] = is_correct 
+                if is_correct:
+                    norm_answers_marked_correct.add(normalize_str(ans_text))
+
+            # Answer correctness should be "indifferent" to string normalization
+            for i in range(len(answer_options)):
+                ans_text = answer_options[i]["text"]
+                norm_text = normalize_str(ans_text)
+                if norm_text in norm_answers_marked_correct:
+                    answer_options[i]["correct"] = True 
+
             all_answer_opts[q_id] = answer_options
  
     with open(f"{out_dir}/all.json", 'w') as f:
