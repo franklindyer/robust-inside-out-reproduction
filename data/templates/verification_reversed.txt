@@ -1,0 +1,10 @@
+Evaluate whether the proposed answer to the entity-centric question is correct.
+Here is the question and the proposed answer.
+Question: {}
+Answer: {}
+Is the proposed answer:
+A. INCORRECT 
+B. CORRECT
+Just return either the letter "A" or the letter "B", with no text around it.
+
+

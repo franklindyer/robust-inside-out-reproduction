@@ -344,6 +344,7 @@ def next_token_probs_ab(model, tokenizer, prompt):
 def generate_tf_answer_batches(model_id, num_batches=15, batch_size=500):
     MODEL_INFO = json.loads(open("data/models.json").read())
     PROMPT_TPL = open("data/templates/verification.txt", 'r').read()
+    PROMPT_REV_TPL = open("data/templates/verification_reversed.txt", 'r').read()
     ALL_QS = load_all_questions()
     ALL_ANS = json.loads(open(f"data/answer_options/{model_id}/all.json").read())
 
@@ -377,9 +378,15 @@ def generate_tf_answer_batches(model_id, num_batches=15, batch_size=500):
             ans_results = []
             for ans_opt in ALL_ANS[str(i)]:
                 prompt = PROMPT_TPL.format(q["question"], ans_opt["text"])
-                ab_probs = next_token_probs_ab(model, tokenizer, prompt) 
-                # ans_opt["ab_probs"] = ab_probs
-                ans_results.append(ab_probs)
+                ab_probs = next_token_probs_ab(model, tokenizer, prompt)
+ 
+                prompt_rev = PROMPT_REV_TPL.format(q["question"], ans_opt["text"])
+                ab_rev_probs = next_token_probs_ab(model, tokenizer, prompt_rev) 
+          
+                ans_results.append({
+                    "original": ab_probs,
+                    "reversed": ab_rev_probs
+                })
     
             results[i] = ans_results
     

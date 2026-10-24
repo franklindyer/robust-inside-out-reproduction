@@ -12,3 +12,5 @@ data/selected_answers
 data/answer_options
 data/tf_answers
 data/probe_training
+data/probe_training_vecs
+data/k_scores
