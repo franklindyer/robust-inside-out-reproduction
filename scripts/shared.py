@@ -16,16 +16,12 @@ from qa_metrics.RewardBert import RewardBert
 
 torch.manual_seed(67)
 
-def live_cuda_tensors_gib():
-    n, total = 0, 0
-    for o in gc.get_objects():
-        try:
-            if isinstance(o, torch.Tensor) and o.is_cuda:
-                n += 1
-                total += o.numel() * o.element_size()
-        except ReferenceError:
-            continue
-    return n, total / 2**30
+def normalize_str(s):
+    s = s.strip()
+    s = s.lower()
+    s = unidecode(s)
+    s = s.translate(str.maketrans('', '', string.punctuation)) 
+    return s
 
 def load_all_questions(folder="data/splits"):
     q_dict = {}
@@ -192,12 +188,6 @@ def generate_answer_sample_batch(model_id, batch_num, batch_size=500):
         prompt = PROMPT_TPL.format(q["question"])
         results[i] = greedy_and_sampled(model, tokenizer, prompt)
 
-        if i % 5 == 0:
-            n, gib = live_cuda_tensors_gib()
-            print(f"{i:5d}  alloc={torch.cuda.memory_allocated()/2**30:6.2f} GiB  "
-                  f"reserved={torch.cuda.memory_reserved()/2**30:6.2f} GiB  "
-                  f"live_tensors={n} ({gib:.2f} GiB)")        
-
     with open(out_fname, 'w') as f:
         f.write(json.dumps(results, indent=4, ensure_ascii=False))
 
@@ -287,13 +277,6 @@ def answer_options_gen_for_model(model_id, n_batches=15, batch_size=500):
             q = qs[q_id]
             answer_options = get_options_list(q)
             gold_text = q["answer"]
-
-            def normalize_str(s):
-                s = s.strip()
-                s = s.lower()
-                s = unidecode(s)
-                s = s.translate(str.maketrans('', '', string.punctuation)) 
-                return s
 
             norm_answers_marked_correct = set()
             for i in range(len(answer_options)):
