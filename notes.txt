@@ -7,12 +7,13 @@ OVERALL TODO LIST:
 - [ ] generate P(a|q) and P(a|q)_norm scores for each QA pair and model
     - not planned for now?
 - [x] generate P(True) scores for each QA pair and model
-- [ ] determine set of "good" questions for use in logistic regression probe training
+- [x] determine set of "good" questions for use in logistic regression probe training
 - [ ] train log reg probe classifiers on all model layers, keeping layer 1 and best hidden layer
 - [ ] evaluate trained and baseline (embedding) log reg probe classifiers 
 - [ ] statistics and figures of sampled LLM answers
 - [ ] statistics and figures of TF answered questions, also by question category
 - [ ] statistics and figures of exhibited knowledge gap
+- [ ] document all functions in shared.py and all data files/folders
 - [ ] BONUS: analysis/post-mortem of non-sequitur or ill-formatted sampled LLM answers
 - [ ] BONUS: analysis and post-mortem of incorrect/inconsistent RewardBert judgments
 
@@ -23,6 +24,7 @@ Needs to be mentioned in the final paper:
 - Exact Python library and model used for equality testing: https://github.com/zli12321/qa_metrics
 - RewardBert for equality testing has some conspicuous errors; give a few examples in the appendix
 - Also disclaim possible issues with Wikidata queries, e.g. isolated examples where companies have multiple headquarters and only one of them is marked correct?
+- Acknowledge that the "hard to guess" constraint may easily be violated systematically, even for some of the relations in the original paper. E.g. a manufactured product may include the name of its manufacturer, or a company may derive its name from its founder.
 
 Possible candidate Wikidata relations to use?
 - relations from original paper

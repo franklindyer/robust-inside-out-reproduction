@@ -12,7 +12,6 @@ os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
-from qa_metrics.RewardBert import RewardBert
 
 torch.manual_seed(67)
 
@@ -262,6 +261,8 @@ def answer_options_gen_for_batch(model_id, batch_num, batch_size=500):
     return answer_options_list
 
 def answer_options_gen_for_model(model_id, n_batches=15, batch_size=500):
+    from qa_metrics.RewardBert import RewardBert
+
     qs = load_all_questions()
     r_bert = RewardBert(device='cuda')    
 

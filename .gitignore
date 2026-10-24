@@ -11,3 +11,4 @@ data/sampled_answers
 data/selected_answers
 data/answer_options
 data/tf_answers
+data/probe_training
