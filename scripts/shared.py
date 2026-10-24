@@ -298,7 +298,8 @@ def answer_options_gen_for_model(model_id, n_batches=15, batch_size=500):
             norm_answers_marked_correct = set()
             for i in range(len(answer_options)):
                 ans_text = answer_options[i]["text"]
-                is_correct = r_bert.compute_score(gold_text, ans_text)[0] > 0.5
+                is_gold = answer_options[i]["source"] == "gold"
+                is_correct = is_gold or (r_bert.compute_score(gold_text, ans_text)[0] > 0.5)
                 answer_options[i]["correct"] = is_correct 
                 if is_correct:
                     norm_answers_marked_correct.add(normalize_str(ans_text))

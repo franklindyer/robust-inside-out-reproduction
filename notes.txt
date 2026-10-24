@@ -1,24 +1,28 @@
 OVERALL TODO LIST:
 - [x] generate full list of entity-centered Wikidata questions
 - [x] sample greedy and 1000 random answers for each question
-- [ ] come up with some simple string heuristics for automatically judging some answers as equivalent
-- [ ] use LLM judge to determine which answers are equivalent
+- [x] come up with some mechanism for automatically judging some answers as equivalent
+- [x] use LLM judge to determine which answers are equivalent
+    - replaced with RewardBert
 - [ ] generate P(a|q) and P(a|q)_norm scores for each QA pair and model
-- [ ] generate P(True) scores for each QA pair and model
+    - not planned for now?
+- [x] generate P(True) scores for each QA pair and model
 - [ ] determine set of "good" questions for use in logistic regression probe training
-- [ ] 
-- [ ] generate statistics and figures of generated LLM answers
+- [ ] train log reg probe classifiers on all model layers, keeping layer 1 and best hidden layer
+- [ ] evaluate trained and baseline (embedding) log reg probe classifiers 
+- [ ] statistics and figures of sampled LLM answers
+- [ ] statistics and figures of TF answered questions, also by question category
+- [ ] statistics and figures of exhibited knowledge gap
 - [ ] BONUS: analysis/post-mortem of non-sequitur or ill-formatted sampled LLM answers
-
-When sampling answers for each question, need to make sure to also get the following:
-- P(a|q) and P(a|q)_norm scores for each sampled answer
-- count number of occurrences of each sampled answer
+- [ ] BONUS: analysis and post-mortem of incorrect/inconsistent RewardBert judgments
 
 Needs to be mentioned in the final paper:
 - I am not using a system prompt for any models, just a normal user prompt template
 - Using a wider variety of Wikidata relations for improved robustness
 - Subtle arithmetic internals may affect exact probability values: https://discuss.huggingface.co/t/results-of-model-generate-are-different-for-different-batch-sizes-of-the-decode-only-model/34878/6 
 - Exact Python library and model used for equality testing: https://github.com/zli12321/qa_metrics
+- RewardBert for equality testing has some conspicuous errors; give a few examples in the appendix
+- Also disclaim possible issues with Wikidata queries, e.g. isolated examples where companies have multiple headquarters and only one of them is marked correct?
 
 Possible candidate Wikidata relations to use?
 - relations from original paper
