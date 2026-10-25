@@ -513,10 +513,10 @@ def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, epochs
     dl_emb = DataLoader(h_emb, batch_size=32, shuffle=True)
     dl_l24 = DataLoader(h_l24, batch_size=32, shuffle=True)
 
-    mus_emb = h_emb.features.mean(dim=1, keepdim=True)
-    sds_emb = h_emb.features.std(dim=1, keepdim=True)
-    mus_l24 = h_l24.features.mean(dim=1, keepdim=True)
-    sds_l24 = h_l24.features.std(dim=1, keepdim=True)
+    mus_emb = h_emb.features.mean(dim=0, keepdim=True)
+    sds_emb = h_emb.features.std(dim=0, keepdim=True)
+    mus_l24 = h_l24.features.mean(dim=0, keepdim=True)
+    sds_l24 = h_l24.features.std(dim=0, keepdim=True)
 
     model_emb = LogisticRegression(hidden_dim, 1)
     model_l24 = LogisticRegression(hidden_dim, 1)
@@ -565,8 +565,8 @@ def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, epochs
             print(f"EMB model loss: {epoch_loss_emb}")
             print(f"L24 model loss: {epoch_loss_l24}")
 
-    y_pred_emb = torch.squeeze(model_emb(h_emb.features))
-    y_pred_l24 = torch.squeeze(model_l24(h_l24.features))
+    y_pred_emb = torch.squeeze(model_emb((h_emb.features-mus_emb)/sds_emb))
+    y_pred_l24 = torch.squeeze(model_l24((h_l24.features-mus_l24)/sds_l24))
     acc_emb = torch.sum(y_pred_emb.round() == h_emb.labels)/len(h_emb.labels)
     acc_l24 = torch.sum(y_pred_l24.round() == h_l24.labels)/len(h_l24.labels)
 
