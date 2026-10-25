@@ -1,4 +1,5 @@
 from collections import Counter, defaultdict
+import copy
 import csv
 import gc
 import glob
@@ -488,6 +489,8 @@ class HiddenLayersData(Dataset):
         v_correct = all_data["correct"][layer_num]
         v_incorrect = all_data["incorrect"][layer_num]
         v_all = torch.cat([v_correct, v_incorrect], dim=0)
+        self.correct = v_correct
+        self.incorrect = v_incorrect
         self.features = v_all
 
         self.labels = torch.tensor(
@@ -503,85 +506,118 @@ class HiddenLayersData(Dataset):
         target = self.labels[index]
         return features, target
 
-def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, epochs=2000):
+# AI slop
+def fit_probe(model, xtr, ytr, xva, yva, epochs, patience, min_delta, batch_size=32, lr=0.01):
+    crit = nn.BCELoss()
+    opt = torch.optim.SGD(model.parameters(), lr=lr)
+
+    hist = []
+    best = {"epoch": -1, "val_loss": float("inf"), "val_acc": float("nan")}
+    best_state = copy.deepcopy(model.state_dict())
+    bad_epochs = 0
+
+    for epoch in range(epochs):
+        model.train()
+        order = torch.randperm(len(ytr))
+        train_loss = 0.0
+        for i in range(0, len(ytr), batch_size):
+            idx = order[i:i + batch_size]
+            opt.zero_grad()
+            loss = crit(model(xtr[idx]).squeeze(-1), ytr[idx])
+            loss.backward()
+            opt.step()
+            train_loss += loss.item() * len(idx)
+
+        model.eval()
+        with torch.no_grad():
+            p_va = model(xva).squeeze(-1)
+            val_loss = crit(p_va, yva).item()
+            val_acc = ((p_va > 0.5).float() == yva).float().mean().item()
+
+        hist.append((epoch, train_loss / len(ytr), val_loss, val_acc))
+
+        if val_loss < best["val_loss"] - min_delta:
+            best.update(epoch=epoch, val_loss=val_loss, val_acc=val_acc)
+            best_state = copy.deepcopy(model.state_dict())
+            bad_epochs = 0
+        else:
+            bad_epochs += 1
+            if bad_epochs >= patience:
+                print(f"    early stop @ epoch {epoch} "
+                      f"(best epoch {best['epoch']}, val loss {best['val_loss']:.4f})")
+                break
+
+    model.load_state_dict(best_state)
+    return hist, model
+
+def train_probe_on_layer(model_id, target_layer=24, hidden_dim=4096, max_epochs=2000):
+    h = HiddenLayersData(f"data/probe_training/{model_id}/tensors.pt", target_layer)
+
+    val_frac = 0.1
+    n_correct = len(h.correct) # Note: assumes the particular shape of HiddenLayersData
+    perm = torch.randperm(n_correct)
+    n_val = max(1, int(round(val_frac * len(h.correct))))
+    val_idx, tr_idx = perm[:n_val], perm[n_val:]
+    tr_idx = torch.cat([tr_idx, tr_idx + n_correct], dim=0)
+    val_idx = torch.cat([val_idx, val_idx + n_correct], dim=0)
+
+    mus = h.features[tr_idx].mean(0, keepdim=True)
+    sds = h.features[tr_idx].std(0, keepdim=True).clamp_min(1e-6)
+
+    x_tr = (h.features[tr_idx] - mus) / sds
+    x_va = (h.features[val_idx] - mus) / sds
+    y_tr, y_va = h.labels[tr_idx], h.labels[val_idx]
+    
+    model = LogisticRegression(hidden_dim, 1)
+
+    hist, best_model = fit_probe(
+        model, 
+        x_tr, 
+        y_tr, 
+        x_va, 
+        y_va,
+        max_epochs, 
+        100, 
+        1e-4
+    )
+
+    return mus, sds, best_model, hist
+    
+def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, max_epochs=2000):
     out_dir = f"data/probe_scores/{model_id}"
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
     
-    h_emb = HiddenLayersData(f"data/probe_training/{model_id}/tensors.pt", 0)
-    h_l24 = HiddenLayersData(f"data/probe_training/{model_id}/tensors.pt", target_layer)
-    dl_emb = DataLoader(h_emb, batch_size=32, shuffle=True)
-    dl_l24 = DataLoader(h_l24, batch_size=32, shuffle=True)
+    _, _, _, baseline_hist = train_probe_on_layer(
+        model_id,
+        target_layer=0,
+        hidden_dim=hidden_dim,
+        max_epochs=max_epochs
+    )
 
-    mus_emb = h_emb.features.mean(dim=0, keepdim=True)
-    sds_emb = h_emb.features.std(dim=0, keepdim=True)
-    mus_l24 = h_l24.features.mean(dim=0, keepdim=True)
-    sds_l24 = h_l24.features.std(dim=0, keepdim=True)
+    mus, sds, model, model_hist = train_probe_on_layer(
+        model_id,
+        target_layer=target_layer,
+        hidden_dim=hidden_dim,
+        max_epochs=max_epochs
+    )
 
-    model_emb = LogisticRegression(hidden_dim, 1)
-    model_l24 = LogisticRegression(hidden_dim, 1)
+    with open(f"{out_dir}/baseline_training_stats.tsv", 'w') as f:
+        for (epoch, train_loss, val_loss, val_acc) in baseline_hist:
+            f.write(f"{epoch}\t{train_loss}\t{val_loss}\t{val_acc}\n")
 
-    criterion = nn.BCELoss()
-    optimizer_emb = torch.optim.SGD(model_emb.parameters(), lr=0.01) 
-    optimizer_l24 = torch.optim.SGD(model_l24.parameters(), lr=0.01)
-
-    losses_emb = []
-    losses_l24 = []
-
-    for epoch in tqdm.tqdm(range(epochs)):
-        epoch_loss_emb = 0
-        epoch_loss_l24 = 0
-        
-        for i, ((x_emb, y_emb), (x_l24, y_l24)) in enumerate(zip(dl_emb, dl_l24)):
-            # Normalize data
-            x_emb = (x_emb - mus_emb)/sds_emb
-            x_l24 = (x_l24 - mus_l24)/sds_l24
-
-            y_pred_emb = model_emb(x_emb) 
-            y_pred_emb = torch.squeeze(y_pred_emb)
-
-            y_pred_l24 = model_l24(x_l24) 
-            y_pred_l24 = torch.squeeze(y_pred_l24)
-            
-            loss_emb = criterion(y_pred_emb, y_emb)
-            epoch_loss_emb += loss_emb.item()
-            
-            loss_l24 = criterion(y_pred_l24, y_l24)
-            epoch_loss_l24 += loss_l24.item()
-            
-            loss_emb.backward()
-            loss_l24.backward()
-            
-            optimizer_emb.step()
-            optimizer_l24.step()
-            
-            optimizer_emb.zero_grad() 
-            optimizer_l24.zero_grad() 
-
-        losses_emb.append(epoch_loss_emb)
-        losses_l24.append(epoch_loss_l24)
-        if epoch % 50 == 0:
-            print(f"EPOCH {epoch}")
-            print(f"EMB model loss: {epoch_loss_emb}")
-            print(f"L24 model loss: {epoch_loss_l24}")
-
-    y_pred_emb = torch.squeeze(model_emb((h_emb.features-mus_emb)/sds_emb))
-    y_pred_l24 = torch.squeeze(model_l24((h_l24.features-mus_l24)/sds_l24))
-    acc_emb = torch.sum(y_pred_emb.round() == h_emb.labels)/len(h_emb.labels)
-    acc_l24 = torch.sum(y_pred_l24.round() == h_l24.labels)/len(h_l24.labels)
-
-    with open(f"{out_dir}/training_stats.tsv", 'w') as f:
-        f.write(f"epoch\tbaseline\thidden\n")
-        for i, (loss_emb, loss_l24) in enumerate(zip(losses_emb, losses_l24)):
-            f.write(f"{i}\t{loss_emb}\t{loss_l24}\n")
+    with open(f"{out_dir}/model_training_stats.tsv", 'w') as f:
+        for (epoch, train_loss, val_loss, val_acc) in model_hist:
+            f.write(f"{epoch}\t{train_loss}\t{val_loss}\t{val_acc}\n")
     
     with open(f"{out_dir}/final_training_acc.txt", 'w') as f:
         f.write(f"TRAINING COMPLETE\n")
-        f.write(f"Number of epochs: {epochs}\n")
-        f.write(f"Training accuracy of embedding baseline: {acc_emb}\n")
-        f.write(f"Training accuracy of layer-{target_layer} probe: {acc_l24}\n")
+        f.write(f"Number of baseline epochs: {len(baseline_hist)}\n")
+        f.write(f"Number of model epochs: {len(model_hist)}\n")
+        f.write(f"Val accuracy of embedding baseline: {baseline_hist[-1][-1]}\n")
+        f.write(f"Val accuracy of layer-{target_layer} probe: {model_hist[-1][-1]}\n")
 
-    return mus_l24, sds_l24, model_l24
+    return mus, sds, model
 
 
 def calculate_probe_scores(model_id, mus, sds, lin_probe, target_layer=24):
@@ -624,7 +660,7 @@ def train_and_score_probe(model_id, target_layer=24, hidden_dim=4096, epochs=200
         model_id, 
         target_layer=target_layer, 
         hidden_dim=hidden_dim, 
-        epochs=epochs
+        max_epochs=epochs
     )
     calculate_probe_scores(
         model_id,
@@ -633,3 +669,4 @@ def train_and_score_probe(model_id, target_layer=24, hidden_dim=4096, epochs=200
         lin_probe,
         target_layer=target_layer
     )
+
