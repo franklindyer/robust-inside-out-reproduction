@@ -11,7 +11,7 @@ from unidecode import unidecode
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM, AutoModel, AutoTokenizer, BitsAndBytesConfig
 
 torch.manual_seed(67)
 
@@ -398,7 +398,8 @@ def extract_hidden_states(model, tokenizer, prompts, layer_inds):
     
     for prompt in tqdm.tqdm(prompts):
         inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-        outputs = model(**inputs, output_hidden_states=True, use_cache=False)
+        with torch.no_grad():
+            outputs = model(**inputs, output_hidden_states=True, use_cache=False)
 
         for i in layer_inds:
             hidden_layer = outputs.hidden_states[i].float()  
@@ -418,7 +419,7 @@ def make_probe_training_vectors(model_id, layer_inds=[0, 24]):
 
     model_hug_id = MODEL_INFO[model_id]["huggingface"]
     tokenizer = AutoTokenizer.from_pretrained(model_hug_id)
-    model = AutoModelForCausalLM.from_pretrained(
+    model = AutoModel.from_pretrained(
         model_hug_id,
         dtype=torch.bfloat16, 
         device_map="auto"
