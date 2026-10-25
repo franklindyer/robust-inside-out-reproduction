@@ -513,6 +513,11 @@ def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, epochs
     dl_emb = DataLoader(h_emb, batch_size=32, shuffle=True)
     dl_l24 = DataLoader(h_l24, batch_size=32, shuffle=True)
 
+    mus_emb = h_emb.features.mean(dim=1, keepdim=True)
+    sds_emb = h_emb.features.std(dim=1, keepdim=True)
+    mus_l24 = h_l24.features.mean(dim=1, keepdim=True)
+    sds_l24 = h_l24.features.std(dim=1, keepdim=True)
+
     model_emb = LogisticRegression(hidden_dim, 1)
     model_l24 = LogisticRegression(hidden_dim, 1)
 
@@ -528,6 +533,10 @@ def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, epochs
         epoch_loss_l24 = 0
         
         for i, ((x_emb, y_emb), (x_l24, y_l24)) in enumerate(zip(dl_emb, dl_l24)):
+            # Normalize data
+            x_emb = (x_emb - mus_emb)/sds_emb
+            x_l24 = (x_l24 - mus_l24)/sds_l24
+
             y_pred_emb = model_emb(x_emb) 
             y_pred_emb = torch.squeeze(y_pred_emb)
 
@@ -572,10 +581,10 @@ def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, epochs
         f.write(f"Training accuracy of embedding baseline: {acc_emb}\n")
         f.write(f"Training accuracy of layer-{target_layer} probe: {acc_l24}\n")
 
-    return model_l24
+    return mus_l24, sds_l24, model_l24
 
 
-def calculate_probe_scores(model_id, lin_probe, target_layer=24):
+def calculate_probe_scores(model_id, mus, sds, lin_probe, target_layer=24):
     MODEL_INFO = json.loads(open("data/models.json").read())
     PROMPT_TPL = open("data/templates/verification.txt", 'r').read()
     out_dir = f"data/probe_scores/{model_id}"
@@ -603,6 +612,7 @@ def calculate_probe_scores(model_id, lin_probe, target_layer=24):
         
         h_reps = extract_hidden_states_batch(model, tokenizer, prompts, [target_layer])
         h_reps = h_reps[target_layer]
+        h_reps = (h_reps - mus)/sds
         probe_scores = torch.squeeze(lin_probe(h_reps)).tolist()
         all_scores[q_id] = probe_scores
 
@@ -610,7 +620,7 @@ def calculate_probe_scores(model_id, lin_probe, target_layer=24):
         f.write(json.dumps(all_scores, indent=4, ensure_ascii=False))
 
 def train_and_score_probe(model_id, target_layer=24, hidden_dim=4096, epochs=2000):
-    lin_probe = train_probe_with_baseline(
+    mus, sds, lin_probe = train_probe_with_baseline(
         model_id, 
         target_layer=target_layer, 
         hidden_dim=hidden_dim, 
@@ -618,6 +628,8 @@ def train_and_score_probe(model_id, target_layer=24, hidden_dim=4096, epochs=200
     )
     calculate_probe_scores(
         model_id,
+        mus,
+        sds,
         lin_probe,
         target_layer=target_layer
     )
