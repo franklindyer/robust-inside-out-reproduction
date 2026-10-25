@@ -412,6 +412,28 @@ def extract_hidden_states(model, tokenizer, prompts, layer_inds):
 
     return layers
 
+def extract_hidden_states_batch(model, tokenizer, prompts, layer_inds):
+    layers = {i: [] for i in layer_inds}
+    
+    MAX_LEN = 256
+    tokenizer.pad_token = tokenizer.eos_token
+    inputs = tokenizer(
+            prompts,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=MAX_LEN,
+    ).to(model.device)
+    outputs = model(**inputs, output_hidden_states=True, use_cache=False)
+
+    for i in layer_inds:
+        hidden_layer = outputs.hidden_states[i].float()  
+        mask = inputs["attention_mask"].unsqueeze(-1).float()
+        pooled = (hidden_layer * mask).sum(1) / mask.sum(1).clamp(min=1e-6)
+        layers[i] = pooled.cpu()
+
+    return layers
+
 def make_probe_training_vectors(model_id, layer_inds=[0, 24]):
     MODEL_INFO = json.loads(open("data/models.json").read())
     PROMPT_TPL = open("data/templates/verification.txt", 'r').read()
