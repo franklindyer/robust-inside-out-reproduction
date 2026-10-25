@@ -10,7 +10,9 @@ from unidecode import unidecode
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
+import numpy as np
 import torch
+from torch.utils.data import Dataset, DataLoader
 from transformers import AutoModelForCausalLM, AutoModel, AutoTokenizer, BitsAndBytesConfig
 
 torch.manual_seed(67)
@@ -469,3 +471,141 @@ def make_probe_training_vectors(model_id, layer_inds=[0, 24]):
         "correct": h_correct,
         "incorrect": h_incorrect
     }, f"{out_dir}/tensors.pt")
+
+class LogisticRegression(nn.Module):
+    def __init__(self, input_dim, output_dim):
+        super(LogisticRegression, self).__init__()
+        self.linear = nn.Linear(input_dim, output_dim)
+        
+    def forward(self, x):
+        out = self.linear(x)
+        return torch.sigmoid(out)
+
+class HiddenLayersData(Dataset):
+    def __init__(self, fname, layer_num):
+        all_data = torch.load(fname)
+        v_correct = all_data["correct"][layer_num]
+        v_incorrect = all_data["incorrect"][layer_num]
+        v_all = torch.cat([v_correct, v_incorrect], dim=0)
+        self.features = v_all
+
+        self.labels = torch.tensor(
+            [1]*v_correct.shape[0] + [0]*v_incorrect.shape[0], 
+            dtype=torch.float32
+        )
+
+    def __len__(self):
+        return len(self.features)
+
+    def __getitem__(self, index):
+        features = self.features[index, :]
+        target = self.labels[index]
+        return features, target
+
+def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, epochs=2000):
+    out_dir = f"data/probe_scores/{model_id}"
+    if not os.path.isdir(out_dir):
+        os.mkdir(out_dir)
+    
+    h_emb = HiddenLayersData(f"data/probe_training/{model_id}/tensors.pt", 0)
+    h_l24 = HiddenLayersData(f"data/probe_training/{model_id}/tensors.pt", target_layer)
+    dl_emb = DataLoader(h_emb, batch_size=32, shuffle=True)
+    dl_l24 = DataLoader(h_l24, batch_size=32, shuffle=True)
+
+    model_emb = LogisticRegression(hidden_dim, 1)
+    model_l24 = LogisticRegression(hidden_dim, 1)
+
+    criterion = nn.BCELoss()
+    optimizer_emb = torch.optim.SGD(model_emb.parameters(), lr=0.01) 
+    optimizer_l24 = torch.optim.SGD(model_l24.parameters(), lr=0.01)
+
+    losses_emb = []
+    losses_l24 = []
+
+    for epoch in tqdm.tqdm(range(epochs)):
+        epoch_loss_emb = 0
+        epoch_loss_l24 = 0
+        
+        for i, ((x_emb, y_emb), (x_l24, y_l24)) in enumerate(zip(dl_emb, dl_l24)):
+            y_pred_emb = model_emb(x_emb) 
+            y_pred_emb = torch.squeeze(y_pred_emb)
+
+            y_pred_l24 = model_l24(x_l24) 
+            y_pred_l24 = torch.squeeze(y_pred_l24)
+            
+            loss_emb = criterion(y_pred_emb, y_emb)
+            epoch_loss_emb += loss_emb
+            
+            loss_l24 = criterion(y_pred_l24, y_l24)
+            epoch_loss_l24 += loss_l24
+            
+            loss_emb.backward()
+            loss_l24.backward()
+            
+            optimizer_emb.step()
+            optimizer_l24.step()
+            
+            optimizer_emb.zero_grad() 
+            optimizer_l24.zero_grad() 
+
+        losses_emb.append(epoch_loss_emb.float())
+        losses_l24.append(epoch_loss_l24.float())
+        if epoch % 50 == 0:
+            print(f"EPOCH {epoch}")
+            print(f"EMB model loss: {epoch_loss_emb}")
+            print(f"L24 model loss: {epoch_loss_l24}")
+
+    with open(f"{out_dir}/training_stats.tsv", 'w') as f:
+        f.write(f"epoch\tbaseline\thidden\n")
+        for i, (loss_emb, loss_l24) in enumerate(zip(losses_emb, losses_l24)):
+            f.write(f"{i}\t{loss_emb}\t{loss_l24}\n")
+
+    return model_l24
+
+
+def calculate_probe_scores(model_id, lin_probe, target_layer=24):
+    MODEL_INFO = json.loads(open("data/models.json").read())
+    PROMPT_TPL = open("data/templates/verification.txt", 'r').read()
+    out_dir = f"data/probe_scores/{model_id}"
+
+    model_hug_id = MODEL_INFO[model_id]["huggingface"]
+    tokenizer = AutoTokenizer.from_pretrained(model_hug_id)
+    model = AutoModel.from_pretrained(
+        model_hug_id,
+        dtype=torch.bfloat16, 
+        device_map="auto"
+    )
+    model.eval()
+
+    QS = load_all_questions()
+    ANS_OPTS = json.loads(open(f"data/answer_options/{model_id}/all.json").read())
+    TF_TPL = open("data/templates/verification.txt").read()
+
+    test_qids = list([q_id for q_id in QS if QS[q_id]["split"] == "test"])
+    all_scores = { q_id: [] for q_id in test_qids }
+
+    for q_id in tqdm.tqdm(test_qids):
+        q = QS[q_id]
+        ans_opts = ANS_OPTS[str(q_id)]
+        prompts = [TF_TPL.format(q["question"], ans_opt["text"]) for ans_opt in ans_opts]
+        
+        h_reps = extract_hidden_states_batch(model, tokenizer, prompts, [target_layer])
+        h_reps = h_reps[target_layer]
+        probe_scores = torch.squeeze(lin_probe(h_reps)).tolist()
+        all_scores[q_id] = probe_scores
+
+    with open(f"{out_dir}/all.json", 'w') as f:
+        f.write(json.dumps(all_scores, indent=4, ensure_ascii=False))
+
+def train_and_score_probe(model_id, target_layer=24, hidden_dim=4096, epochs=2000):
+    lin_probe = train_probe_with_baseline(
+        model_id, 
+        target_layer=target_layer, 
+        hidden_dim=hidden_dim, 
+        epochs=epochs
+    )
+    calculate_probe_scores(
+        model_id
+        lin_probe,
+        target_layer=target_layer
+    )
