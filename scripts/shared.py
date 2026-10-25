@@ -392,3 +392,56 @@ def generate_tf_answer_batches(model_id, num_batches=15, batch_size=500):
     
         with open(out_fname, 'w') as f:
             f.write(json.dumps(results, indent=4, ensure_ascii=False))
+
+def extract_hidden_states(model, tokenizer, prompts, layer_inds):
+    layers = {i: [] for i in layer_inds}
+    
+    for prompt in tqdm.tqdm(prompts):
+        inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+        outputs = model(**inputs, output_hidden_states=True, use_cache=False)
+
+        for i in layer_inds:
+            hidden_layer = outputs.hidden_states[i].float()  
+            mask = inputs["attention_mask"].unsqueeze(-1).float()
+            pooled = (hidden_layer * mask).sum(1) / mask.sum(1).clamp(min=1e-6)
+            layers[i].append(pooled.cpu())
+
+    for i in layers:
+        layers[i] = torch.cat(layers[i], dim=0)
+
+    return layers
+
+def make_probe_training_vectors(model_id, layer_inds=[0, 24]):
+    MODEL_INFO = json.loads(open("data/models.json").read())
+    PROMPT_TPL = open("data/templates/verification.txt", 'r').read()
+    out_dir = f"data/probe_training/{model_id}"
+
+    model_hug_id = MODEL_INFO[model_id]["huggingface"]
+    tokenizer = AutoTokenizer.from_pretrained(model_hug_id)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_hug_id,
+        dtype=torch.bfloat16, 
+        device_map="auto"
+    )
+    model.eval()
+
+    prompts_correct = []
+    prompts_incorrect = []
+    with open(f"{out_dir}/probe_training.tsv", 'r') as f:
+        reader = csv.reader(f, delimiter="\t")
+        for r in reader:
+            q_id = int(r[0])
+            q_text = r[2]
+            a_correct = r[3]
+            a_incorrect = r[4]
+
+            prompts_correct.append(PROMPT_TPL.format(q_text, a_correct)) 
+            prompts_incorrect.append(PROMPT_TPL.format(q_text, a_incorrect))
+
+    h_correct = extract_hidden_states(model, tokenizer, prompts_correct, layer_inds)
+    h_incorrect = extract_hidden_states(model, tokenizer, prompts_incorrect, layer_inds)
+
+    torch.save({
+        "correct": h_correct,
+        "incorrect": h_incorrect
+    }, f"{out_dir}/tensors.pt")
