@@ -26,6 +26,7 @@ Needs to be mentioned in the final paper:
 - Also disclaim possible issues with Wikidata queries, e.g. isolated examples where companies have multiple headquarters and only one of them is marked correct?
 - Acknowledge that the "hard to guess" constraint may easily be violated systematically, even for some of the relations in the original paper. E.g. a manufactured product may include the name of its manufacturer, or a company may derive its name from its founder.
 - Rather than "simulating the generation of a as an answer to q" to get the hidden probe inputs, we use the method from A.8.2, which the authors claim "had similar results" in early experiments.
+- We use layer 32/42 for Gemma since it has a different number of layers, roughly proportional to 24/32 for the other models
 
 Possible candidate Wikidata relations to use?
 - relations from original paper

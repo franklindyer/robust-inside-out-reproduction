@@ -544,10 +544,10 @@ def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, epochs
             y_pred_l24 = torch.squeeze(y_pred_l24)
             
             loss_emb = criterion(y_pred_emb, y_emb)
-            epoch_loss_emb += loss_emb
+            epoch_loss_emb += loss_emb.item()
             
             loss_l24 = criterion(y_pred_l24, y_l24)
-            epoch_loss_l24 += loss_l24
+            epoch_loss_l24 += loss_l24.item()
             
             loss_emb.backward()
             loss_l24.backward()
@@ -558,8 +558,8 @@ def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, epochs
             optimizer_emb.zero_grad() 
             optimizer_l24.zero_grad() 
 
-        losses_emb.append(epoch_loss_emb.float())
-        losses_l24.append(epoch_loss_l24.float())
+        losses_emb.append(epoch_loss_emb)
+        losses_l24.append(epoch_loss_l24)
         if epoch % 50 == 0:
             print(f"EPOCH {epoch}")
             print(f"EMB model loss: {epoch_loss_emb}")
