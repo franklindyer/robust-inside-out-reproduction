@@ -605,7 +605,7 @@ def train_and_score_probe(model_id, target_layer=24, hidden_dim=4096, epochs=200
         epochs=epochs
     )
     calculate_probe_scores(
-        model_id
+        model_id,
         lin_probe,
         target_layer=target_layer
     )
