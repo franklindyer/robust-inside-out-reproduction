@@ -556,10 +556,21 @@ def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, epochs
             print(f"EMB model loss: {epoch_loss_emb}")
             print(f"L24 model loss: {epoch_loss_l24}")
 
+    y_pred_emb = torch.squeeze(model_emb(h_emb.features))
+    y_pred_l24 = torch.squeeze(model_l24(h_l24.features))
+    acc_emb = torch.sum(y_pred_emb.round() == h_emb.labels)/len(h_emb.labels)
+    acc_l24 = torch.sum(y_pred_l24.round() == h_l24.labels)/len(h_l24.labels)
+
     with open(f"{out_dir}/training_stats.tsv", 'w') as f:
         f.write(f"epoch\tbaseline\thidden\n")
         for i, (loss_emb, loss_l24) in enumerate(zip(losses_emb, losses_l24)):
             f.write(f"{i}\t{loss_emb}\t{loss_l24}\n")
+    
+    with open(f"{out_dir}/final_training_acc.txt", 'w') as f:
+        f.write(f"TRAINING COMPLETE\n")
+        f.write(f"Number of epochs: {epochs}\n")
+        f.write(f"Training accuracy of embedding baseline: {acc_emb}\n")
+        f.write(f"Training accuracy of layer-{target_layer} probe: {acc_l24}\n")
 
     return model_l24
 
