@@ -424,7 +424,8 @@ def extract_hidden_states_batch(model, tokenizer, prompts, layer_inds):
             truncation=True,
             max_length=MAX_LEN,
     ).to(model.device)
-    outputs = model(**inputs, output_hidden_states=True, use_cache=False)
+    with torch.no_grad():
+        outputs = model(**inputs, output_hidden_states=True, use_cache=False)
 
     for i in layer_inds:
         hidden_layer = outputs.hidden_states[i].float()  
