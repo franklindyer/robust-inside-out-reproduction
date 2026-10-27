@@ -6,6 +6,7 @@ import glob
 import json
 import os
 import string
+import random
 import tqdm
 from unidecode import unidecode
 
@@ -17,6 +18,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from transformers import AutoModelForCausalLM, AutoModel, AutoTokenizer, BitsAndBytesConfig
 
+random.seed(42)
 torch.manual_seed(67)
 
 def normalize_str(s):
@@ -237,7 +239,6 @@ def answer_options_gen_for_batch(model_id, batch_num, batch_size=500):
 
         # Other testing gold answers, at most 50
         MAX_OTHER_GOLD = 50
-        random.seed(42)
         ans_opts += [
             { 
                 "text": ans_text, 
