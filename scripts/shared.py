@@ -243,7 +243,7 @@ def answer_options_gen_for_batch(model_id, batch_num, batch_size=500):
                 "text": ans_text, 
                 "source": "other_gold"
             }
-            for ans_text in random.choices(test_gold[q["type"]], k=MAX_OTHER_GOLD+1)
+            for ans_text in test_gold[q["type"]]
             if not ans_text == q["answer"]
         ][:MAX_OTHER_GOLD]
 
