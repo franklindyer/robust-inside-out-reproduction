@@ -33,8 +33,6 @@ for model_id in ["mistral-7b", "llama3-8b", "gemma2-9b"]:
         for id in answers_batch:
             id = int(id)
             q = QS[id]
-            if not q["split"] == "train":
-                continue
             
             q_cat = q["type"]
             gold_norm = normalize_str(q["answer"])
@@ -56,6 +54,10 @@ for model_id in ["mistral-7b", "llama3-8b", "gemma2-9b"]:
     training_rows = []
     for s_id in answer_opts:
         id = int(s_id)
+        q = QS[id]
+        if not q["split"] == "train":
+            continue
+
         sampled_correct = [r for r in answer_opts[s_id] if r["correct"] and r["source"] == "sampled"]
         sampled_incorrect = [r for r in answer_opts[s_id] if not r["correct"] and r["source"] == "sampled"]
         if (len(sampled_correct) > 0 or id in gold_sampled_ids) and len(sampled_incorrect) > 0:

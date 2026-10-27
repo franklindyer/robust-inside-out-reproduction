@@ -28,6 +28,13 @@ Needs to be mentioned in the final paper:
 - Rather than "simulating the generation of a as an answer to q" to get the hidden probe inputs, we use the method from A.8.2, which the authors claim "had similar results" in early experiments.
 - We use layer 32/42 for Gemma since it has a different number of layers, roughly proportional to 24/32 for the other models
 
+Follow-up experiments, time permitting?
+- Train and test probes on (disjoint) sets of gold test entities from other questions, rather than on hallucinate incorrect answers. This could shed light on whether the probe is "surfacing hidden knowledge", or just learning to reject the model's own hallucinations.
+- Train probes on hallucinated incorrect answers but test them on incorrect but real entities as distractors. This could also shed light on the above.
+- Re-train probed but this time reserve a few held-out relation/question types. This could shed light on whether the probes are learning a difference between truth and falsity of answers, or whether what they are learning is actually more specific to particular question-types.
+
+--- --- --- 
+
 Possible candidate Wikidata relations to use?
 - relations from original paper
     - P26 (spouse)

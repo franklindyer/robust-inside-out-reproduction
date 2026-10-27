@@ -198,6 +198,7 @@ def load_sampled_answers(folder_path):
 
 def answer_options_gen_for_batch(model_id, batch_num, batch_size=500):
     train_gold = json.loads(open("data/selected_answers/train_gold.json").read())
+    test_gold = json.loads(open("data/selected_answers/test_gold.json").read())
     train_sampled = json.loads(open("data/selected_answers/train_commonly_sampled.json").read())
 
     sampled_fname = f"./data/sampled_answers/{model_id}/{str(500*(1+batch_num)).zfill(5)}.json"
@@ -210,6 +211,12 @@ def answer_options_gen_for_batch(model_id, batch_num, batch_size=500):
         ans_opts.append({
             "text": q["answer"],
             "source": "gold"
+        })
+
+        # Greedy answer
+        ans_opts.append({
+            "text": sampled_batch[str(q["id"])]["greedy"]["text"].strip(),
+            "source": "greedy"
         })
 
         # Answer sampled > 1 times by the specific model
@@ -228,23 +235,17 @@ def answer_options_gen_for_batch(model_id, batch_num, batch_size=500):
             "source": "source_entity"
         })
 
-        # Training gold answers
+        # Other testing gold answers, at most 50
+        MAX_OTHER_GOLD = 50
+        random.seed(42)
         ans_opts += [
             { 
                 "text": ans_text, 
-                "source": "train_gold"
+                "source": "other_gold"
             }
-            for ans_text in train_gold[q["type"]]
-        ]
-
-        # Training commonly sampled answers
-        ans_opts += [
-            { 
-                "text": ans_text.strip(), 
-                "source": "train_sampled"
-            }
-            for ans_text in train_sampled[model_id][q["type"]]
-        ]
+            for ans_text in random.choices(test_gold[q["type"]], k=MAX_OTHER_GOLD+1)
+            if not ans_text == q["answer"]
+        ][:MAX_OTHER_GOLD]
 
         ans_opts_dedup = []
         ans_raw = set()
