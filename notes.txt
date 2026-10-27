@@ -8,7 +8,7 @@ OVERALL TODO LIST:
     - not planned for now?
 - [x] generate P(True) scores for each QA pair and model
 - [x] determine set of "good" questions for use in logistic regression probe training
-- [ ] train log reg probe classifiers on all model layers, keeping layer 1 and best hidden layer
+- [x] train log reg probe classifiers on all model layers, keeping layer 1 and best hidden layer
 - [ ] evaluate trained and baseline (embedding) log reg probe classifiers 
 - [ ] statistics and figures of sampled LLM answers
 - [ ] statistics and figures of TF answered questions, also by question category

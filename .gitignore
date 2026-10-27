@@ -14,3 +14,5 @@ data/tf_answers
 data/probe_training
 data/probe_scores
 data/k_scores
+data/figures
+data/case_studies
