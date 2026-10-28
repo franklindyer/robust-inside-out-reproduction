@@ -23,7 +23,9 @@ k_scores = {
 k_avgs_ext = {
     model_id: {
         "k": np.average([k["external"]["k_sampled_only"] for k in k_scores[model_id].values()]),
-        "k_star": np.average([k["external"]["k_star_sampled_only"] for k in k_scores[model_id].values()])
+        "k_star": np.average([k["external"]["k_star_sampled_only"] for k in k_scores[model_id].values()]),
+        "k_other": np.average([k["external"]["k_other"] for k in k_scores[model_id].values()]),
+        "k_other_star": np.average([k["external"]["k_star_other"] for k in k_scores[model_id].values()]),
     }
     for model_id in k_scores
 }
@@ -31,7 +33,9 @@ k_avgs_ext = {
 k_avgs_int = {
     model_id: {
         "k": np.average([k["internal"]["k_sampled_only"] for k in k_scores[model_id].values()]),
-        "k_star": np.average([k["internal"]["k_star_sampled_only"] for k in k_scores[model_id].values()])
+        "k_star": np.average([k["internal"]["k_star_sampled_only"] for k in k_scores[model_id].values()]),
+        "k_other": np.average([k["internal"]["k_other"] for k in k_scores[model_id].values()]),
+        "k_other_star": np.average([k["internal"]["k_star_other"] for k in k_scores[model_id].values()]),
     }
     for model_id in k_scores
 }
@@ -67,9 +71,21 @@ model_id = "mistral-7b"
 k_decreased_ids = [
     int(qid)
     for qid in k_scores[model_id]
-    if k_scores[model_id][qid]["external"]["k_sampled_only"] \
-        > k_scores[model_id][qid]["internal"]["k_sampled_only"]
+    if k_scores[model_id][qid]["external"]["k_other"] \
+        > k_scores[model_id][qid]["internal"]["k_other"]
 ]
+
+k_by_diffs = [
+    (
+        qid,
+        k_scores[model_id][qid]["external"]["k_sampled_only"] - k_scores[model_id][qid]["internal"]["k_sampled_only"]
+    )
+    for qid in k_scores[model_id]
+]
+k_by_diffs.sort(key=lambda x: x[1])
+
+print(k_by_diffs[:20])
+print(k_by_diffs[-20:])
 
 gold_sampled_ids = [
     int(sid.strip())
@@ -83,4 +99,14 @@ print(k_decreased_ids[:10])
 print(gold_sampled_ids[:10])
 print(k_dec_gold_sampled[:20])
 print(len(k_decreased_ids), len(gold_sampled_ids), len(k_dec_gold_sampled))
-print(len([id for id in k_dec_gold_sampled if QS[id]["split"] == "train"]))
+# print(len([id for id in k_dec_gold_sampled if QS[id]["split"] == "train"]))
+
+dk = {
+    qid: k_scores[model_id][qid]["external"]["k_sampled_only"] - k_scores[model_id][qid]["internal"]["k_sampled_only"] 
+    for qid in k_scores[model_id]
+}
+dk_avg_sampled = np.average([dk[qid] for qid in k_scores[model_id] if int(qid) in gold_sampled_ids])
+dk_avg_not_sampled = np.average([dk[qid] for qid in k_scores[model_id] if not int(qid) in gold_sampled_ids])
+
+print("Average k-delta when gold is sampled:", dk_avg_sampled)
+print("Average k-delta when gold is not sampled:", dk_avg_not_sampled)

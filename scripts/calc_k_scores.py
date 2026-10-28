@@ -29,21 +29,27 @@ def k_score_for_list(results):
 
 def k_scores_for_tf(q, ans_results, key_fn):
     ans_results.sort(key=lambda r: -key_fn(r))
-    
+
+    # K-scores with all answer types included    
     k = k_score_for_list(ans_results)
     k_star = 1 if k == 1 else 0
-    k_sampled_only = k_score_for_list([r for r in ans_results if r["source"] in ["gold", "sampled"]])
+
+    # Sources used for the main experiment
+    main_sources = ["gold", "sampled", "greedy"]
+    k_sampled_only = k_score_for_list([r for r in ans_results if r["source"] in main_sources])
     k_star_sampled_only = 1 if k_sampled_only == 1 else 0
-    k_tgold = k_score_for_list([r for r in ans_results if r["source"] in ["gold", "train_gold"]])
-    k_star_tgold = 1 if k_tgold == 1 else 0 
+
+    # K-scores when scored against alternate gold answers
+    k_other = k_score_for_list([r for r in ans_results if r["source"] in ["gold", "other_gold"]])
+    k_star_other = 1 if k_other == 1 else 0 
     
     return {
         "k": k,
         "k_star": k_star,
         "k_sampled_only": k_sampled_only,
         "k_star_sampled_only": k_star_sampled_only,
-        "k_tgold": k_tgold,
-        "k_star_tgold": k_star_tgold
+        "k_other": k_other,
+        "k_star_other": k_star_other
     }
 
 QS = load_all_questions()
