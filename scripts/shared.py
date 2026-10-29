@@ -616,7 +616,6 @@ def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, max_ep
 
     return mus, sds, model
 
-
 def calculate_probe_scores(model_id, mus, sds, lin_probe, target_layer=24):
     MODEL_INFO = json.loads(open("data/models.json").read())
     PROMPT_TPL = open("data/templates/verification.txt", 'r').read()
@@ -667,3 +666,48 @@ def train_and_score_probe(model_id, target_layer=24, hidden_dim=4096, epochs=200
         target_layer=target_layer
     )
 
+def k_score_for_list(results):
+    num_results = len(results)
+    num_correct = len([
+        ans_res for ans_res in results
+        if ans_res["correct"] or ans_res["source"] == "gold"
+    ])
+
+    if num_results == num_correct:
+        # All sampled answers must have been correct
+        return 1
+
+    k_cum_sum = 0
+    num_cum_incorrect = 0
+    for r in results:
+        if r["correct"]:
+            k_cum_sum += num_cum_incorrect
+        else:
+            num_cum_incorrect += 1
+    k_score = 1 - k_cum_sum / (num_correct * (num_results - num_correct))
+    return k_score
+
+def k_scores_for_tf(q, ans_results, key_fn):
+    ans_results.sort(key=lambda r: -key_fn(r))
+
+    # K-scores with all answer types included
+    k = k_score_for_list(ans_results)
+    k_star = 1 if k == 1 else 0
+
+    # Sources used for the main experiment
+    main_sources = ["gold", "sampled", "greedy"]
+    k_sampled_only = k_score_for_list([r for r in ans_results if r["source"] in main_sources])
+    k_star_sampled_only = 1 if k_sampled_only == 1 else 0
+
+    # K-scores when scored against alternate gold answers
+    k_other = k_score_for_list([r for r in ans_results if r["source"] in ["gold", "other_gold"]])
+    k_star_other = 1 if k_other == 1 else 0
+
+    return {
+        "k": k,
+        "k_star": k_star,
+        "k_sampled_only": k_sampled_only,
+        "k_star_sampled_only": k_star_sampled_only,
+        "k_other": k_other,
+        "k_star_other": k_star_other
+    }

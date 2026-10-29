@@ -108,5 +108,20 @@ dk = {
 dk_avg_sampled = np.average([dk[qid] for qid in k_scores[model_id] if int(qid) in gold_sampled_ids])
 dk_avg_not_sampled = np.average([dk[qid] for qid in k_scores[model_id] if not int(qid) in gold_sampled_ids])
 
+for model_id in ["mistral-7b", "llama3-8b", "gemma2-9b"]:
+    ext_k_1 = [
+        qid for qid in k_scores[model_id]
+        if k_scores[model_id][qid]["external"]["k_star_sampled_only"] == 1
+        and not int(qid) in gold_sampled_ids
+    ]
+    int_k_1 = [
+        qid for qid in k_scores[model_id]
+        if k_scores[model_id][qid]["internal"]["k_star_sampled_only"] == 1
+        and not int(qid) in gold_sampled_ids
+    ]
+    total = len(list(k_scores[model_id].keys()))
+    print(f"Proportion of answers both unsampled and EXT k* = 1 for {model_id}: {len(ext_k_1)/total:.2f}")
+    print(f"Proportion of answers both unsampled and INT k* = 1 for {model_id}: {len(int_k_1)/total:.2f}")
+
 print("Average k-delta when gold is sampled:", dk_avg_sampled)
 print("Average k-delta when gold is not sampled:", dk_avg_not_sampled)

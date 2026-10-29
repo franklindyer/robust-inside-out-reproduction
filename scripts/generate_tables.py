@@ -6,8 +6,20 @@ JENV = jinja2.Environment(loader=JLOAD)
 
 ### AVERAGE K-VALUE TABLES ###
 
-k_avgs = json.loads(open("data/analysis_data/k_tests.json").read())
-k_avgs = { tuple(k.split("|")): k_avgs["avgs"][k] for k in k_avgs["avgs"] }
+k_stats = json.loads(open("data/analysis_data/k_tests.json").read())
+k_avgs = { tuple(k.split("|")): k_stats["avgs"][k] for k in k_stats["avgs"] }
+
+### AVERAGE K*-VALUES FOR UNSAMPLED ANSWERS ###
+
+k_star_unsampled = { tuple(k.split("|")): k_stats["k_star_unsampled"][k] for k in k_stats["k_star_unsampled"] }
+
+### CASE STUDY RANK TABLES
+
+case_studies = json.loads(open("data/analysis_data/case_studies.json").read())
+
+### REWARDBERT REFLEXIVITY VIOLATIONS ###
+
+rewardbert_data = json.loads(open("data/analysis_data/rewardbert.json").read())
 
 ### ANALYSIS OF ONCE-SAMPLED ANSWERS ###
 
@@ -27,9 +39,15 @@ sampled_blocks_res.sort(key=lambda r: -r["per_dec"]*r["once_prob"])
 sampled_blocks_res = sampled_blocks_res[:15]
 
 tbl_tpl = JENV.get_template("tables.tpl")
+
+JENV.filters["zip"] = lambda a, b: zip(a, b)
+
 tbl_out = tbl_tpl.render(
     k_avgs = k_avgs,
-    sampled_blocks = sampled_blocks_res
+    k_star_unsampled = k_star_unsampled,
+    case_studies = case_studies,
+    rewardbert_data = rewardbert_data,
+    sampled_blocks = sampled_blocks_res,
 )
 
 with open(f"data/analysis_data/tex_tables.txt", 'w') as f:
