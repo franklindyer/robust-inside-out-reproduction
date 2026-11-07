@@ -60,13 +60,15 @@ for model_id in ["mistral-7b", "llama3-8b", "gemma2-9b"]:
 
         sampled_correct = [r for r in answer_opts[s_id] if r["correct"] and r["source"] == "sampled"]
         sampled_incorrect = [r for r in answer_opts[s_id] if not r["correct"] and r["source"] == "sampled"]
+        gold_incorrect = [r for r in answer_opts[s_id] if not r["correct"] and r["source"] == "other_gold"]
         if (len(sampled_correct) > 0 or id in gold_sampled_ids) and len(sampled_incorrect) > 0:
             training_rows.append([
                 str(id),
                 QS[id]["source_entity"],
                 QS[id]["question"],
-                QS[id]["answer"], 
-                sampled_incorrect[0]["text"].strip()
+                QS[id]["answer"],                               # Gold (correct) answer 
+                sampled_incorrect[0]["text"].strip(),           # Top incorrect sampled answer
+                random.choice(gold_incorrect)["text"].strip()   # Random incorrect other gold answer
             ])
  
     with open(f"{out_dir}/probe_training.tsv", 'w') as f:

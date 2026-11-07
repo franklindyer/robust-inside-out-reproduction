@@ -452,6 +452,8 @@ def make_probe_training_vectors(model_id, layer_inds=[0, 24]):
 
     prompts_correct = []
     prompts_incorrect = []
+    prompts_incorrect_gold = []
+    
     with open(f"{out_dir}/probe_training.tsv", 'r') as f:
         reader = csv.reader(f, delimiter="\t")
         for r in reader:
@@ -459,16 +461,20 @@ def make_probe_training_vectors(model_id, layer_inds=[0, 24]):
             q_text = r[2]
             a_correct = r[3]
             a_incorrect = r[4]
+            a_incorrect_gold = r[5]
 
             prompts_correct.append(PROMPT_TPL.format(q_text, a_correct)) 
             prompts_incorrect.append(PROMPT_TPL.format(q_text, a_incorrect))
+            prompts_incorrect_gold.append(PROMPT_TPL.format(q_text, a_incorrect_gold))
 
     h_correct = extract_hidden_states(model, tokenizer, prompts_correct, layer_inds)
     h_incorrect = extract_hidden_states(model, tokenizer, prompts_incorrect, layer_inds)
+    h_incorrect_gold = extract_hidden_states(model, tokenizer, prompts_incorrect_gold, layer_inds)
 
     torch.save({
         "correct": h_correct,
-        "incorrect": h_incorrect
+        "incorrect": h_incorrect,
+        "incorrect_gold": h_incorrect_gold
     }, f"{out_dir}/tensors.pt")
 
 class LogisticRegression(nn.Module):
