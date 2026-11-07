@@ -487,10 +487,10 @@ class LogisticRegression(nn.Module):
         return torch.sigmoid(out)
 
 class HiddenLayersData(Dataset):
-    def __init__(self, fname, layer_num):
+    def __init__(self, fname, layer_num, incorrect_col="incorrect"):
         all_data = torch.load(fname)
         v_correct = all_data["correct"][layer_num]
-        v_incorrect = all_data["incorrect"][layer_num]
+        v_incorrect = all_data[incorrect_col][layer_num]
         v_all = torch.cat([v_correct, v_incorrect], dim=0)
         self.correct = v_correct
         self.incorrect = v_incorrect
@@ -553,8 +553,8 @@ def fit_probe(model, xtr, ytr, xva, yva, epochs, patience, min_delta, batch_size
     model.load_state_dict(best_state)
     return hist, model
 
-def train_probe_on_layer(model_id, target_layer=24, hidden_dim=4096, max_epochs=2000):
-    h = HiddenLayersData(f"data/probe_training/{model_id}/tensors.pt", target_layer)
+def train_probe_on_layer(model_id, target_layer=24, hidden_dim=4096, max_epochs=2000, incorrect_col="incorrect"):
+    h = HiddenLayersData(f"data/probe_training/{model_id}/tensors.pt", target_layer, incorrect_col=incorrect_col)
 
     val_frac = 0.1
     n_correct = len(h.correct) # Note: assumes the particular shape of HiddenLayersData
@@ -586,7 +586,7 @@ def train_probe_on_layer(model_id, target_layer=24, hidden_dim=4096, max_epochs=
 
     return mus, sds, best_model, hist
     
-def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, max_epochs=2000):
+def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, max_epochs=2000, incorrect_col=incorrect_col):
     out_dir = f"data/probe_scores/{model_id}"
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
@@ -595,14 +595,16 @@ def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, max_ep
         model_id,
         target_layer=0,
         hidden_dim=hidden_dim,
-        max_epochs=max_epochs
+        max_epochs=max_epochs,
+        incorrect_col=incorrect_col
     )
 
     mus, sds, model, model_hist = train_probe_on_layer(
         model_id,
         target_layer=target_layer,
         hidden_dim=hidden_dim,
-        max_epochs=max_epochs
+        max_epochs=max_epochs,
+        incorrect_col=incorrect_col
     )
 
     with open(f"{out_dir}/baseline_training_stats.tsv", 'w') as f:
@@ -622,7 +624,7 @@ def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, max_ep
 
     return mus, sds, model
 
-def calculate_probe_scores(model_id, mus, sds, lin_probe, target_layer=24):
+def calculate_probe_scores(model_id, mus, sds, lin_probe, target_layer=24, out_fname="all"):
     MODEL_INFO = json.loads(open("data/models.json").read())
     PROMPT_TPL = open("data/templates/verification.txt", 'r').read()
     out_dir = f"data/probe_scores/{model_id}"
@@ -654,22 +656,24 @@ def calculate_probe_scores(model_id, mus, sds, lin_probe, target_layer=24):
         probe_scores = torch.squeeze(lin_probe(h_reps)).tolist()
         all_scores[q_id] = probe_scores
 
-    with open(f"{out_dir}/all.json", 'w') as f:
+    with open(f"{out_dir}/{out_fname}.json", 'w') as f:
         f.write(json.dumps(all_scores, indent=4, ensure_ascii=False))
 
-def train_and_score_probe(model_id, target_layer=24, hidden_dim=4096, epochs=2000):
+def train_and_score_probe(model_id, target_layer=24, hidden_dim=4096, epochs=2000, incorrect_col="incorrect", out_fname="all"):
     mus, sds, lin_probe = train_probe_with_baseline(
         model_id, 
         target_layer=target_layer, 
         hidden_dim=hidden_dim, 
-        max_epochs=epochs
+        max_epochs=epochs,
+        incorrect_col=incorrect_col
     )
     calculate_probe_scores(
         model_id,
         mus,
         sds,
         lin_probe,
-        target_layer=target_layer
+        target_layer=target_layer,
+        out_fname=out_fname
     )
 
 def k_score_for_list(results):
