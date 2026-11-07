@@ -586,7 +586,7 @@ def train_probe_on_layer(model_id, target_layer=24, hidden_dim=4096, max_epochs=
 
     return mus, sds, best_model, hist
     
-def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, max_epochs=2000, incorrect_col=incorrect_col):
+def train_probe_with_baseline(model_id, target_layer=24, hidden_dim=4096, max_epochs=2000, incorrect_col="incorrect"):
     out_dir = f"data/probe_scores/{model_id}"
     if not os.path.isdir(out_dir):
         os.mkdir(out_dir)
