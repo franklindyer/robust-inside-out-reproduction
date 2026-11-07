@@ -23,7 +23,9 @@ for model_id in ["mistral-7b", "llama3-8b", "gemma2-9b"]:
         os.mkdir(out_dir)
 
     ANS_OPTS = json.loads(open(f"data/answer_options/{model_id}/all.json").read())
-    PROBE_SCORES = json.loads(open(f"data/probe_scores/{model_id}/all.json").read())
+
+    PROBE_SAMPLED_SCORES = json.loads(open(f"data/probe_scores/{model_id}/all_incorrect_sampled.json").read())
+    PROBE_GOLD_SCORES = json.loads(open(f"data/probe_scores/{model_id}/all_incorrect_gold.json").read())
 
     tf_dir = f"data/tf_answers/{model_id}"
     for fname in os.listdir(tf_dir):
@@ -33,15 +35,18 @@ for model_id in ["mistral-7b", "llama3-8b", "gemma2-9b"]:
         for qid in tf_scores:
             for i in range(len(tf_scores[qid])):
                 ANS_OPTS[qid][i]["ab_probs"] = tf_scores[qid][i]
-                ANS_OPTS[qid][i]["probe_score"] = PROBE_SCORES[qid][i]
+                ANS_OPTS[qid][i]["probe_sampled_score"] = PROBE_SAMPLED_SCORES[qid][i]
+                ANS_OPTS[qid][i]["probe_gold_score"] = PROBE_GOLD_SCORES[qid][i]
 
     ext_key = lambda r: r["ab_probs"]["original"]["a_prob"] or 0
-    int_key = lambda r: r["probe_score"]
+    int_samp_key = lambda r: r["probe_sampled_score"]
+    int_gold_key = lambda r: r["probe_gold_score"]
 
     k_scores = {
         int(sid): {
             "external": k_scores_for_tf(QS[int(sid)], ANS_OPTS[sid], ext_key),
-            "internal": k_scores_for_tf(QS[int(sid)], ANS_OPTS[sid], int_key)
+            "internal_sampled": k_scores_for_tf(QS[int(sid)], ANS_OPTS[sid], int_samp_key),
+            "internal_gold": k_scores_for_tf(QS[int(sid)], ANS_OPTS[sid], int_gold_key)
         }
         for sid in ANS_OPTS
         if QS[int(sid)]["split"] == "test"
@@ -51,7 +56,8 @@ for model_id in ["mistral-7b", "llama3-8b", "gemma2-9b"]:
         case_studies[model_id][int(qid)] = {
             "question": QS[qid]["question"],
             "k_ext": k_scores[qid]["external"]["k_sampled_only"],
-            "k_int": k_scores[qid]["internal"]["k_sampled_only"],
+            "k_int": k_scores[qid]["internal_sampled"]["k_sampled_only"],
+            "k_int_gold": k_scores[qid]["internal_gold"]["k_sampled_only"],
             "top10_ext": [
                 {
                     "score": ext_key(r),
@@ -63,14 +69,22 @@ for model_id in ["mistral-7b", "llama3-8b", "gemma2-9b"]:
             ][:10],
             "top10_int": [
                 {
-                    "score": int_key(r),
+                    "score": int_samp_key(r),
                     "text": r["text"],
                     "correct": r["correct"]
                 } 
-                for r in sorted(ANS_OPTS[str(qid)], key=lambda x: -int_key(x))
+                for r in sorted(ANS_OPTS[str(qid)], key=lambda x: -int_samp_key(x))
+                if r["source"] in ["gold", "sampled"]
+            ][:10],
+            "top10_int_gold": [
+                {
+                    "score": int_gold_key(r),
+                    "text": r["text"],
+                    "correct": r["correct"]
+                } 
+                for r in sorted(ANS_OPTS[str(qid)], key=lambda x: -int_gold_key(x))
                 if r["source"] in ["gold", "sampled"]
             ][:10]
-
         }
     
     with open(f"{out_dir}/all.json", 'w') as f:
