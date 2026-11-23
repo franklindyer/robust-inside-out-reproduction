@@ -18,13 +18,13 @@ for k_suffix in ["_sampled_only", "_other"]:
             k_data["avgs"][f"{model_id}|k{k_suffix}|{int_ext}"]
             for model_id in model_groups
         ]
-        for int_ext in ["external", "internal"] 
+        for int_ext in ["external", "internal_sampled"] 
     }
 
     k_avg_increases = {
         "external": ["", "", ""],
-        "internal": [
-            f"{(100*(grouped_k_avg['internal'][i]/grouped_k_avg['external'][i]-1)):+.1f}%"
+        "internal_sampled": [
+            f"{(100*(grouped_k_avg['internal_sampled'][i]/grouped_k_avg['external'][i]-1)):+.1f}%"
             for i in range(len(model_groups))
         ]
     }
@@ -34,13 +34,13 @@ for k_suffix in ["_sampled_only", "_other"]:
             k_data["avgs"][f"{model_id}|k_star{k_suffix}|{int_ext}"]
             for model_id in model_groups
         ]
-        for int_ext in ["external", "internal"] 
+        for int_ext in ["external", "internal_sampled"] 
     }
 
     kstar_avg_increases = {
         "external": ["", "", ""],
-        "internal": [
-            f"{(100*(grouped_kstar_avg['internal'][i]/grouped_kstar_avg['external'][i]-1)):+.1f}%"
+        "internal_sampled": [
+            f"{(100*(grouped_kstar_avg['internal_sampled'][i]/grouped_kstar_avg['external'][i]-1)):+.1f}%"
             for i in range(len(model_groups))
         ]
     }
@@ -87,7 +87,7 @@ k_scores = {
 
 k_delta = pd.DataFrame({
     model_id: [
-        k_scores[model_id][id]["internal"]["k_sampled_only"]
+        k_scores[model_id][id]["internal_sampled"]["k_sampled_only"]
         - k_scores[model_id][id]["external"]["k_sampled_only"]
         for id in k_scores[model_id]
     ]
@@ -126,7 +126,7 @@ k1_int_ids = {
     model_id: set([
         qid
         for qid in k_scores[model_id]
-        if k_scores[model_id][qid]["internal"]["k_sampled_only"] == 1
+        if k_scores[model_id][qid]["internal_sampled"]["k_sampled_only"] == 1
     ])
     for model_id in model_groups
 }
@@ -136,7 +136,7 @@ k_jump_ids = {
         qid
         for qid in k_scores[model_id]
         if k_scores[model_id][qid]["external"]["k_sampled_only"] \
-            < k_scores[model_id][qid]["internal"]["k_sampled_only"]
+            < k_scores[model_id][qid]["internal_sampled"]["k_sampled_only"]
     ])
     for model_id in model_groups
 }
@@ -146,7 +146,7 @@ k_star_jump_ids = {
         qid
         for qid in k_scores[model_id]
         if k_scores[model_id][qid]["external"]["k_star_sampled_only"] == 0
-            and k_scores[model_id][qid]["internal"]["k_star_sampled_only"] == 1
+            and k_scores[model_id][qid]["internal_sampled"]["k_star_sampled_only"] == 1
     ])
     for model_id in model_groups
 }

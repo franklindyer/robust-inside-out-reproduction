@@ -33,7 +33,7 @@ k_avgs = {
     f"{model_id}|{k_variant}|{int_ext}": \
         np.average([k[int_ext][k_variant] for k in k_scores[model_id].values()])
     for k_variant in ["k_sampled_only", "k_star_sampled_only", "k_other", "k_star_other"]
-    for int_ext in ["external", "internal"]
+    for int_ext in ["external", "internal_sampled", "internal_gold"]
     for model_id in model_ids
 }
 
@@ -41,7 +41,7 @@ k_tests = {
     f"{model_id}|{k_variant}": \
         scipy.stats.ttest_ind(
             [k["external"][k_variant] for k in k_scores[model_id].values()],
-            [k["internal"][k_variant] for k in k_scores[model_id].values()],
+            [k["internal_sampled"][k_variant] for k in k_scores[model_id].values()],
             alternative="less",
             equal_var=False
         ).pvalue
@@ -50,10 +50,16 @@ k_tests = {
 }
 
 k_star_avgs_unsampled = {
-    f"{model_id}|{int_ext}": \
-        np.average([k[int_ext]["k_star_sampled_only"] for (qid, k) in k_scores[model_id].items() \
+    f"{model_id}|{int_ext}|{k_variant}": \
+        np.average([k[int_ext][k_variant] for (qid, k) in k_scores[model_id].items() \
             if not (int(qid) in gold_sampled_ids[model_id] or int(qid) in correct_sampled_ids[model_id]) ])
-    for int_ext in ["external", "internal"]
+    # for int_ext in ["external", "internal_sampled", "internal_gold"]
+    for (int_ext, k_variant) in [
+        ("external", "k_star_sampled_only"),
+        ("external", "k_star_other"),
+        ("internal_sampled", "k_star_sampled_only"),
+        ("internal_gold", "k_star_other"),
+    ]
     for model_id in model_ids
 }
 
